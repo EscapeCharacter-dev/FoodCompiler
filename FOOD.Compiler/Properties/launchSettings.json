@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "FOOD.Compiler": {
+      "commandName": "Project",
+      "workingDirectory": "$(ProjectDir)"
+    }
+  }
+}

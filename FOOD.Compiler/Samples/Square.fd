@@ -1,0 +1,58 @@
+﻿using Food;
+
+public double SquareD(double x): x * x;
+
+// aaaaa
+/* test */
+public long Square(long x):    x * x;
+public long Cube(long x):      x * x * x;
+public long Hypercube(long x): x * x * x * x;
+public long Pentacube(long x): x * x * x * x * x;
+public long Hexacube(long x):  x * x * x * x * x * x;
+public long Heptacube(long x): x * x * x * x * x * x * x;
+public long Octocube(long x):  x * x * x * x * x * x * x * x;
+public long Entacube(long x):  x * x * x * x * x * x * x * x * x;
+public long Decacube(long x):  x * x * x * x * x * x * x * x * x * x;
+
+public ulong Factorial(ulong n):
+	n == 0 ? 1 :
+	n <= 2 ? n :
+	n * Factorial(n - 1);
+
+public ulong SquareRoot(ulong n)
+{
+	if (n == 0 || n == 1)
+		return n;
+
+	ulong i = 0;
+	ulong result = 0;
+	while (result <= n)
+	{
+		i++;
+		result = Square(i);
+	}
+	return i - 1;
+}
+
+public ulong A(): (ulong)3.5;
+
+record Point3D
+{
+	float X;
+	float Y;
+	float Z;
+}
+
+public struct RawLinkedList
+{
+	RawLinkedList *Previous;
+	RawLinkedList *Next;
+	void *Data;
+	size DataSize;
+}
+
+public int Main()
+{
+	Point3D point = new Point3D(1.0, 1.0, null => int);
+	return (void *)null;
+}
