@@ -54,5 +54,8 @@ public struct RawLinkedList
 public int Main()
 {
 	Point3D point = new Point3D(1.0, 1.0, null => int);
+	Point3D *p = &point;
+	point.X = 3;
+	p->Z = 6;
 	return (void *)null;
 }

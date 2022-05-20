@@ -93,6 +93,7 @@ public partial class Parser
                 DiagnosticContext.Diagnostics["_invalidExpressionGrammar"],
                 _lexer.GetPosition(Previous)
                 ));
+            Console.WriteLine(Previous);
             return new StubTree(TreeType.Error, Current);
         }
     }
@@ -100,53 +101,77 @@ public partial class Parser
     private ParseTree P1()
     {
         var left = P0();
-        switch (Current.Type)
+        while (Current.Type.IsPartOf(
+                TokenType.PlusPlus,
+                TokenType.MinusMinus,
+                TokenType.OpenSquareBracket,
+                TokenType.OpenBracket))
         {
-            case TokenType.PlusPlus: _index++;  return new UnaryTree(TreeType.PostfixIncrement, Current, left);
-            case TokenType.MinusMinus: _index++; return new UnaryTree(TreeType.PostfixDecrement, Current, left);
-            case TokenType.OpenSquareBracket:
-                {
-                    var tok = Current;
-                    _index++;
-                    var right = ParseExpression();
-                    if (Current.Type != TokenType.ClosedSquareBracket)
+            switch (Current.Type)
+            {
+                case TokenType.PlusPlus: _index++; left = new UnaryTree(TreeType.PostfixIncrement, Current, left); break;
+                case TokenType.MinusMinus: _index++; left = new UnaryTree(TreeType.PostfixDecrement, Current, left); break;
+                case TokenType.OpenSquareBracket:
                     {
+                        var tok = Current;
                         _index++;
-                        CompilationUnit.Report(new ReportedDiagnostic(
-                            DiagnosticContext.Diagnostics["_missingClosingBracket"],
-                            _lexer.GetPosition(Previous)
-                            ));
-                        return new StubTree(TreeType.Error, Current);
-                    }
-                    _index++;
-                    return new BinaryTree(TreeType.ArraySubscript, tok, left, right);
-                }
-            case TokenType.OpenBracket:
-                {
-                    _index++;
-                    var children = new List<ParseTree>(4);
-                    children.Add(left);
-                    while (Current.Type != TokenType.ClosedBracket)
-                    {
-                        children.Add(P15());
-                        if (Current.Type != TokenType.Comma)
+                        var right = ParseExpression();
+                        if (Current.Type != TokenType.ClosedSquareBracket)
                         {
-                            if (Current.Type != TokenType.ClosedBracket)
-                            {
-                                _index++;
-                                CompilationUnit.Report(new ReportedDiagnostic(
-                                    DiagnosticContext.Diagnostics["_missingClosingBracket"],
-                                    _lexer.GetPosition(Previous)
+                            _index++;
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                                _lexer.GetPosition(Previous)
                                 ));
-                                return new StubTree(TreeType.Error, Current);
-                            }
-                            break;
+                            return new StubTree(TreeType.Error, Current);
                         }
                         _index++;
+                        left = new BinaryTree(TreeType.ArraySubscript, tok, left, right);
+                        break;
                     }
-                    _index++;
-                    return new ExtensibleTree(TreeType.FunctionCall, left.Token, children.ToArray());
-                }
+                case TokenType.OpenBracket:
+                    {
+                        _index++;
+                        var children = new List<ParseTree>(4);
+                        children.Add(left);
+                        while (Current.Type != TokenType.ClosedBracket)
+                        {
+                            children.Add(P15());
+                            if (Current.Type != TokenType.Comma)
+                            {
+                                if (Current.Type != TokenType.ClosedBracket)
+                                {
+                                    _index++;
+                                    CompilationUnit.Report(new ReportedDiagnostic(
+                                        DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                                        _lexer.GetPosition(Previous)
+                                    ));
+                                    left = new StubTree(TreeType.Error, Current);
+                                    return left;
+                                }
+                                break;
+                            }
+                            _index++;
+                        }
+                        _index++;
+                        left = new ExtensibleTree(TreeType.FunctionCall, left.Token, children.ToArray());
+                        break;
+                    }
+            }
+        }
+        return left;
+    }
+
+    private ParseTree PDots()
+    {
+        var left = P1();
+        while (Current.Type == TokenType.Dot || Current.Type == TokenType.ThinArrow)
+        {
+            var op = Current;
+            var kind = Current.Type == TokenType.Dot ? TreeType.MemberAccess : TreeType.PointerMemberAccess;
+            _index++;
+            var right = PDots();
+            left = new BinaryTree(kind, op, left, right);
         }
         return left;
     }
@@ -235,7 +260,7 @@ public partial class Parser
                 }
         }
         if (kind == TreeType.Error)
-            return P1();
+            return PDots();
         _index++;
         var tree = P2();
         return new UnaryTree(kind, token, tree);

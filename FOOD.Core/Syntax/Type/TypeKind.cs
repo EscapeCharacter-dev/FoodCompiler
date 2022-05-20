@@ -110,9 +110,4 @@ public enum TypeKind
     /// A structure is a block of multiple <i>members</i>.
     /// </summary>
     Struct,
-
-    /// <summary>
-    /// A union is a special block of data that can be interpreted by many types.
-    /// </summary>
-    Union,
 }

@@ -1,5 +1,6 @@
 ﻿using FOOD.Core.Diagnostics;
 using FOOD.Core.Syntax.Lex;
+using FOOD.Core.Syntax.Structure;
 using FOOD.Core.Syntax.Type;
 using System;
 using System.Collections.Generic;
@@ -98,7 +99,8 @@ public partial class Parser
             var ident = (string)Current.Value!;
             if (Head.IsSymbolDeclared(ident))
             {
-                if (Head.GetDeclaration(ident)!.Type.Kind == TypeKind.Struct)
+                if (Head.GetDeclaration(ident)!.Type.Kind == TypeKind.Struct
+                    && Head.GetDeclaration(ident)!.GetType() == typeof(StructureDeclaration))
                 {
                     kind = TypeKind.Struct;
                     type = new ParseType(qualifierField, kind, null, ident);

@@ -32,7 +32,7 @@ public partial class Parser : CompilationPart
     /// <summary>
     /// The current head scope.
     /// </summary>
-    public Scope Head => _head;
+    public Scope Head { get => _head; internal set => _head = value; }
 
     /// <summary>
     /// Creates a subnode of that scope, a fork.

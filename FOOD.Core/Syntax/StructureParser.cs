@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace FOOD.Core.Syntax;
 public partial class Parser
 {
-    private StructureDeclaration? TryParseStructure(bool isPublic)
+    private IDeclaration? TryParseStructure(bool isPublic)
     {
         if (Current.Type == TokenType.KeywordStruct
             || Current.Type == TokenType.KeywordRecord
@@ -54,7 +54,7 @@ public partial class Parser
             StartScope();
             // structure signature only
             _head += new StructureDeclaration(
-                ident, new ParseType(0, TypeKind.Struct), Location.Static, isPublic, Array.Empty<IDeclaration>(), kind);
+                ident, new ParseType(0, TypeKind.Struct), Location.Static, isPublic, Array.Empty<IDeclaration>(), kind, Head);
             while (true)
             {
                 if (Current.Type == TokenType.ClosedCurlyBracket)
@@ -96,12 +96,102 @@ public partial class Parser
                 _index++;
                 members.Add(memberDecl);
             }
+            var past = Head;
             EndScope();
             _index++;
             var decl = new StructureDeclaration(
-                ident, new ParseType(0, TypeKind.Struct), Location.Static, isPublic, members.ToArray(), kind);
+                ident, new ParseType(0, TypeKind.Struct), Location.Static, isPublic, members.ToArray(), kind, past);
             _head += decl;
             return decl;
+        }
+        else if (Current.Type == TokenType.KeywordEnum)
+        {
+            _index++;
+            if (Current.Type != TokenType.Identifier)
+            {
+                CompilationUnit.Report(new ReportedDiagnostic(
+                    DiagnosticContext.Diagnostics["_expectedIdentifier"],
+                    _lexer.GetPosition(Previous)
+                    ));
+                return null;
+            }
+            var ident = (string)Current.Value!;
+            if (Head.IsSymbolDeclared(ident))
+            {
+
+                CompilationUnit.Report(new ReportedDiagnostic(
+                    DiagnosticContext.Diagnostics["_symbolAlreadyDefined"],
+                    _lexer.GetPosition(Previous)
+                    ));
+                return null;
+            }
+            _index++;
+            if (Current.Type != TokenType.OpenCurlyBracket)
+            {
+                CompilationUnit.Report(new ReportedDiagnostic(
+                    DiagnosticContext.Diagnostics["_missingOpenBracket"],
+                    _lexer.GetPosition(Previous)
+                    ));
+                return null;
+            }
+            _index++;
+            var members = new List<(string Identifier, int Value)>();
+            var enumIndex = 0;
+            while (true)
+            {
+                if (Current.Type == TokenType.ClosedCurlyBracket)
+                    break;
+
+                if (Current.Type != TokenType.Identifier)
+                {
+                    CompilationUnit.Report(new ReportedDiagnostic(
+                        DiagnosticContext.Diagnostics["_expectedIdentifier"],
+                        _lexer.GetPosition(Previous)
+                        ));
+                    return null;
+                }
+                var name = (string)Current.Value!;
+                _index++;
+                if (Current.Type == TokenType.Equal)
+                {
+                    _index++;
+                    if (Current.Type == TokenType.LiteralNumber)
+                    {
+                        var tok = Current;
+                        _index++;
+                        if (tok.Variant)
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_enumRequiresLiteralInteger"],
+                                _lexer.GetPosition(Previous)
+                                ));
+                            return null;
+                        }
+                        var val = (decimal)tok.Value!;
+                        enumIndex = (int)val;
+                    }
+                }
+                if (Current.Type != TokenType.Comma || Current.Type != TokenType.ClosedCurlyBracket)
+                {
+                    if (Current.Type == TokenType.ClosedCurlyBracket)
+                        break;
+                    else
+                    {
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_missingCommaOrClosingBracket"],
+                            _lexer.GetPosition(Previous)
+                            ));
+                        _index++;
+                        break;
+                    }
+                }
+                _index++;
+                members.Add((name, enumIndex++));
+                var decl = new EnumDeclaration(name, new ParseType(0, TypeKind.Enum), Location.Static, isPublic, members.ToArray(), Head);
+                _head += decl;
+                return decl;
+            }
+            _index++;
         }
         return null;
     }

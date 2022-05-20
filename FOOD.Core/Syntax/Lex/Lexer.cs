@@ -233,6 +233,29 @@ public class Lexer : CompilationPart
     }
 
     /// <summary>
+    /// Checks for operators <c>C</c>, <c>CC</c> and <c>CCC</c>.
+    /// </summary>
+    /// <param name="single">The result if <c>C</c>.</param>
+    /// <param name="twice">The result if <c>CC</c>.</param>
+    /// <param name="third">The result if <c>CCC</c>.</param>
+    /// <returns></returns>
+    private TokenType Operator3OnlyRepeat(TokenType single, TokenType twice, TokenType third)
+    {
+        var c = Current;
+        _index++;
+        if (Current == c)
+        {
+            _index++;
+            if (Current == c)
+                return third;
+            _index--;
+            return twice;
+        }
+        _index--;
+        return single;
+    }
+
+    /// <summary>
     /// Checks for operators <c>C</c>, <c>CC</c>, <c>C=</c> and <c>CC=</c>.
     /// </summary>
     /// <param name="once">The result if <c>C</c>.</param>
@@ -361,6 +384,7 @@ public class Lexer : CompilationPart
             case '*': type = Operator2RepeatNotAllowed(TokenType.Star, TokenType.StarEqual); break;
             case '%': type = Operator2RepeatNotAllowed(TokenType.Percentage, TokenType.PercentageEqual); break;
             case '^': type = Operator2RepeatNotAllowed(TokenType.Caret, TokenType.CaretEqual); break;
+            case '.': type = Operator3OnlyRepeat(TokenType.Dot, TokenType.DotDot, TokenType.DotDotDot); break;
 
             case '/':
                 _index++;

@@ -39,6 +39,7 @@ public sealed class DiagnosticContext
         { "_commentOutOfBounds", new Diagnostic(DiagnosticLevel.Error, "The comment does not terminate") },
         { "_missingModule", new Diagnostic(DiagnosticLevel.Error, "The module {0} is not found") },
         { "_missingNamespace", new Diagnostic(DiagnosticLevel.Error, "The namespace {0}::{1} is not found") },
+        { "_enumRequiresLiteralInteger", new Diagnostic(DiagnosticLevel.Error, "Enum requires literal integer") },
 
         { "_WDuplicateUsingDirective", new Diagnostic(DiagnosticLevel.Warning2, "The namespace {0} is referenced many times") }
     };

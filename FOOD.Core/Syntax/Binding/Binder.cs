@@ -432,30 +432,10 @@ public sealed class Binder : CompilationPart
             case TreeType.RemainderAssign:
                 {
                     var binary = (BinaryTree)tree;
-                    if (binary.Left.TreeType != TreeType.Identifier)
-                    {
-                        CompilationUnit.Report(new ReportedDiagnostic(
-                            DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(tree.Token)));
-                        return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
-                    }
-                    var ident = (string)binary.Left.Token.Value!;
-                    if (!CompilationUnit.Parser.Head.IsSymbolDeclared(ident))
-                    {
-                        CompilationUnit.Report(new ReportedDiagnostic(
-                            DiagnosticContext.Diagnostics["_missingSymbol"], _lexer.GetPosition(tree.Token), ident));
-                        return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
-                    }
-                    var decl = CompilationUnit.Parser.Head.GetDeclaration(ident);
-                    var right = BindExpression(binary.Right, decl!.Type);
+                    var left = BindExpression(binary.Left);
+                    var right = BindExpression(binary.Right, left.BoundType);
 
-                    if (decl.Type.Kind == TypeKind.Boolean || right.BoundType.Kind == TypeKind.Boolean)
-                    {
-                        CompilationUnit.Report(new ReportedDiagnostic(
-                            DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(tree.Token)));
-                        return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
-                    }
-
-                    return new BoundTree(tree, decl!.Type, new[] { right });
+                    return new BoundTree(tree, left.BoundType, new[] { left, right });
                 }
             case TreeType.BitwiseAndAssign:
             case TreeType.BitwiseExclusiveOrAssign:
@@ -488,6 +468,94 @@ public sealed class Binder : CompilationPart
                     var right = BindExpression(binary.Right, decl!.Type);
 
                     return new BoundTree(tree, decl!.Type, new[] { right });
+                }
+            case TreeType.MemberAccess:
+                {
+                    var binary = (BinaryTree)tree;
+                    var left = BindExpression(binary.Left);
+                    var rightNotBound = binary.Right;
+                    if (rightNotBound.TreeType != TreeType.MemberAccess
+                        && rightNotBound.TreeType != TreeType.PointerMemberAccess
+                        && rightNotBound.TreeType != TreeType.Identifier)
+                    {
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(rightNotBound.Token)));
+                        return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                    }
+                    if (left.BoundType.Kind != TypeKind.Struct)
+                    {
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(left.CoreTree.Token)));
+                        return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                    }
+                    var structType = left.BoundType;
+                    var structure = (StructureDeclaration)CompilationUnit.Parser.Head.GetDeclaration((string)structType.Extra!)!;
+                    ParseType expectedType;
+                    if (rightNotBound.TreeType == TreeType.Identifier)
+                        expectedType = structure.FindMember((string)rightNotBound.Token.Value!)!.Type;
+                    else
+                    {
+                        var rightNotBoundBinary = (BinaryTree)rightNotBound;
+                        var member = structure.FindMember((string)rightNotBoundBinary.Left.Token.Value!);
+                        if (member == null)
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_missingSymbol"],
+                                _lexer.GetPosition(rightNotBoundBinary.Left.Token),
+                                (string)rightNotBoundBinary.Left.Token.Value!));
+                            return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                        }
+                        expectedType = member.Type;
+                    }
+                    var previousHead = CompilationUnit.Parser.Head;
+                    CompilationUnit.Parser.Head = structure.MemberScope;
+                    var right = BindExpression(binary.Right, expectedType);
+                    CompilationUnit.Parser.Head = previousHead;
+                    return new BoundTree(tree, expectedType, new[] { left, right });
+                }
+            case TreeType.PointerMemberAccess:
+                {
+                    var binary = (BinaryTree)tree;
+                    var left = BindExpression(binary.Left);
+                    var rightNotBound = binary.Right;
+                    if (rightNotBound.TreeType != TreeType.MemberAccess
+                        && rightNotBound.TreeType != TreeType.PointerMemberAccess
+                        && rightNotBound.TreeType != TreeType.Identifier)
+                    {
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(rightNotBound.Token)));
+                        return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                    }
+                    if (left.BoundType.Kind != TypeKind.Pointer && left.BoundType.SubType!.Kind == TypeKind.Struct)
+                    {
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(left.CoreTree.Token)));
+                        return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                    }
+                    var structType = left.BoundType.SubType!;
+                    var structure = (StructureDeclaration)CompilationUnit.Parser.Head.GetDeclaration((string)structType.Extra!)!;
+                    ParseType expectedType;
+                    if (rightNotBound.TreeType == TreeType.Identifier)
+                        expectedType = structure.FindMember((string)rightNotBound.Token.Value!)!.Type;
+                    else
+                    {
+                        var rightNotBoundBinary = (BinaryTree)rightNotBound;
+                        var member = structure.FindMember((string)rightNotBoundBinary.Left.Token.Value!);
+                        if (member == null)
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_missingSymbol"],
+                                _lexer.GetPosition(rightNotBoundBinary.Left.Token),
+                                (string)rightNotBoundBinary.Left.Token.Value!));
+                            return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                        }
+                        expectedType = member.Type;
+                    }
+                    var previousHead = CompilationUnit.Parser.Head;
+                    CompilationUnit.Parser.Head = structure.MemberScope;
+                    var right = BindExpression(binary.Right, expectedType);
+                    CompilationUnit.Parser.Head = previousHead;
+                    return new BoundTree(tree, expectedType, new[] { left, right });
                 }
 
             case TreeType.Error:
