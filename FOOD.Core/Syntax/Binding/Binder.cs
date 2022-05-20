@@ -132,7 +132,6 @@ public sealed class Binder : CompilationPart
             case TreeType.UnaryPlus:
             case TreeType.UnaryMinus:
             case TreeType.Dereference:
-            case TreeType.AddressOf:
             case TreeType.LogicalNegation:
             case TreeType.BitwiseNegation:
                 {
@@ -144,6 +143,11 @@ public sealed class Binder : CompilationPart
                         return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
                     }
                     return new BoundTree(tree, sub.BoundType, new[] { sub });
+                }
+            case TreeType.AddressOf:
+                {
+                    var sub = BindExpression(((UnaryTree)tree).Child);
+                    return new BoundTree(tree, new ParseType(0, TypeKind.Pointer, sub.BoundType), new[] { sub });
                 }
             case TreeType.Addition:
             case TreeType.Subtraction:
@@ -472,8 +476,42 @@ public sealed class Binder : CompilationPart
             case TreeType.MemberAccess:
                 {
                     var binary = (BinaryTree)tree;
-                    var left = BindExpression(binary.Left);
+                    var leftNotBound = binary.Left;
                     var rightNotBound = binary.Right;
+                    if (CompilationUnit.Parser.Head.IsSymbolDeclared((string)leftNotBound.Token.Value!))
+                    {
+                        var enumName = (string)leftNotBound.Token.Value!;
+                        var rawDecl = CompilationUnit.Parser.Head.GetDeclaration(enumName)!;
+                        if (rawDecl.Type.Kind != TypeKind.Enum)
+                            goto notEnum;
+                        if ((string)rawDecl.Type.Extra! != enumName)
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                    DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(leftNotBound.Token)));
+                            return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                        }
+                        if (rightNotBound.TreeType != TreeType.Identifier)
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                    DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(rightNotBound.Token)));
+                            return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                        }
+                        var memberName = (string)rightNotBound.Token.Value!;
+                        var enumDecl = (EnumDeclaration)rawDecl;
+                        var member = enumDecl.FindMember(memberName);
+                        if (member != null)
+                            return new BoundTree(tree, enumDecl.Type, Enumerable.Empty<BoundTree>());
+                        else
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_missingSymbol"],
+                                _lexer.GetPosition(rightNotBound.Token),
+                                (string)rightNotBound.Token.Value!));
+                            return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                        }
+                    }
+                notEnum:
+                    var left = BindExpression(binary.Left);
                     if (rightNotBound.TreeType != TreeType.MemberAccess
                         && rightNotBound.TreeType != TreeType.PointerMemberAccess
                         && rightNotBound.TreeType != TreeType.Identifier)

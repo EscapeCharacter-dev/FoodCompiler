@@ -34,4 +34,18 @@ public readonly struct EnumDeclaration : IDeclaration
         Members = members;
         MemberScope = memberScope;
     }
+
+    /// <summary>
+    /// Finds a member inside the enum.
+    /// </summary>
+    /// <param name="ident">The name of the member.</param>
+    public (string Identifier, int Index)? FindMember(string ident)
+    {
+        foreach (var member in Members)
+        {
+            if (member.Identifier == ident)
+                return member;
+        }
+        return null;
+    }
 }

@@ -100,7 +100,7 @@ public partial class Parser
             EndScope();
             _index++;
             var decl = new StructureDeclaration(
-                ident, new ParseType(0, TypeKind.Struct), Location.Static, isPublic, members.ToArray(), kind, past);
+                ident, new ParseType(0, TypeKind.Struct, null, ident), Location.Static, isPublic, members.ToArray(), kind, past);
             _head += decl;
             return decl;
         }
@@ -148,6 +148,7 @@ public partial class Parser
                         DiagnosticContext.Diagnostics["_expectedIdentifier"],
                         _lexer.GetPosition(Previous)
                         ));
+                    _index++;
                     return null;
                 }
                 var name = (string)Current.Value!;
@@ -170,28 +171,36 @@ public partial class Parser
                         var val = (decimal)tok.Value!;
                         enumIndex = (int)val;
                     }
-                }
-                if (Current.Type != TokenType.Comma || Current.Type != TokenType.ClosedCurlyBracket)
-                {
-                    if (Current.Type == TokenType.ClosedCurlyBracket)
-                        break;
                     else
                     {
                         CompilationUnit.Report(new ReportedDiagnostic(
-                            DiagnosticContext.Diagnostics["_missingCommaOrClosingBracket"],
-                            _lexer.GetPosition(Previous)
+                            DiagnosticContext.Diagnostics["_enumRequiresLiteralInteger"],
+                            _lexer.GetPosition(Current)
                             ));
-                        _index++;
-                        break;
+                        return null;
                     }
+                }
+                if (Current.Type == TokenType.ClosedCurlyBracket)
+                    break;
+                if (Current.Type != TokenType.Comma && Current.Type != TokenType.ClosedCurlyBracket)
+                {
+                    CompilationUnit.Report(new ReportedDiagnostic(
+                        DiagnosticContext.Diagnostics["_missingCommaOrClosingBracket"],
+                        _lexer.GetPosition(Previous)
+                        ));
+                    _index++;
+                    break;
                 }
                 _index++;
                 members.Add((name, enumIndex++));
-                var decl = new EnumDeclaration(name, new ParseType(0, TypeKind.Enum), Location.Static, isPublic, members.ToArray(), Head);
-                _head += decl;
-                return decl;
             }
             _index++;
+            var decl =
+                new EnumDeclaration(ident, new ParseType(0, TypeKind.Enum, null, ident),
+                Location.Static, isPublic, members.ToArray(), Head);
+            _head += decl;
+            return decl;
+
         }
         return null;
     }

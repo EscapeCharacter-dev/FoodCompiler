@@ -105,6 +105,12 @@ public partial class Parser
                     kind = TypeKind.Struct;
                     type = new ParseType(qualifierField, kind, null, ident);
                 }
+                else if (Head.GetDeclaration(ident)!.Type.Kind == TypeKind.Enum
+                    && Head.GetDeclaration(ident)!.GetType() == typeof(EnumDeclaration))
+                {
+                    kind = TypeKind.Enum;
+                    type = new ParseType(qualifierField, kind, null, ident);
+                }
                 else
                     type = new ParseType(qualifierField, kind);
             }

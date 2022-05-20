@@ -130,6 +130,9 @@ public partial class Parser
         _index++;
 
         var expr = _binder.BindExpression(ParseExpression(), type);
+        if (!type.Kind.IsCompatibleWith(expr.BoundType.Kind))
+            CompilationUnit.Report(new ReportedDiagnostic(
+                DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(expr.CoreTree.Token)));
         if (Current.Type != TokenType.Semicolon)
             CompilationUnit.Report(new ReportedDiagnostic(
                 DiagnosticContext.Diagnostics["_missingClosingBracket"],

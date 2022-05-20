@@ -51,11 +51,27 @@ public struct RawLinkedList
 	size DataSize;
 }
 
+enum Kind
+{
+	First,
+	Second,
+	Third,
+	Fourth,
+	Fifth,
+	Sixth,
+	Seventh,
+	Eight,
+	Ninth,
+	Tenth,
+}
+
 public int Main()
 {
 	Point3D point = new Point3D(1.0, 1.0, null => int);
+	Kind k = Kind.Fourth;
 	Point3D *p = &point;
 	point.X = 3;
 	p->Z = 6;
-	return (void *)null;
+	point = *p;
+	return null;
 }

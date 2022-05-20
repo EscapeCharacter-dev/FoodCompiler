@@ -1,6 +1,7 @@
 ﻿using FOOD.Core.Diagnostics;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -121,26 +122,21 @@ public class Lexer : CompilationPart
     {
         var line = 0;
         var col = 0;
-        var c = '\0';
 
         fixed (char* p = _source)
         {
-            var p1 = p;
-            for (int i = 0; i < tok.Position; i++)
+            var begin = p;
+            var end = p + tok.Position;
+            for (; begin <= end; begin++)
             {
-                c = *p1++;
-                if (c == '\n')
+                if (*begin == '\n')
                 {
                     line++;
                     col = 0;
                 }
-                else
-                {
-                    col++;
-                }
+                else col++;
             }
         }
-
         return new Position(col, line);
     }
 
