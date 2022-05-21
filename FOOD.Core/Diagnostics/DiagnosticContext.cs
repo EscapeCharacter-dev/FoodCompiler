@@ -40,6 +40,7 @@ public sealed class DiagnosticContext
         { "_missingModule", new Diagnostic(DiagnosticLevel.Error, "The module {0} is not found") },
         { "_missingNamespace", new Diagnostic(DiagnosticLevel.Error, "The namespace {0}::{1} is not found") },
         { "_enumRequiresLiteralInteger", new Diagnostic(DiagnosticLevel.Error, "Enum requires literal integer") },
+        { "_missingColon", new Diagnostic(DiagnosticLevel.Error, "Missing colon") },
 
         { "_WDuplicateUsingDirective", new Diagnostic(DiagnosticLevel.Warning2, "The namespace {0} is referenced many times") }
     };

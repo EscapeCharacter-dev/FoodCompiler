@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FOOD.Core.Diagnostics;
+using FOOD.Core.Syntax.Binding;
 using FOOD.Core.Syntax.Lex;
 using FOOD.Core.Syntax.Statements;
 using FOOD.Core.Syntax.Structure;
@@ -19,6 +20,12 @@ public partial class Parser
             case TokenType.Semicolon:
                 _index++;
                 return new EmptyStatement();
+            case TokenType.KeywordBreak:
+                _index++;
+                return new BreakStatement();
+            case TokenType.KeywordContinue:
+                _index++;
+                return new ContinueStatement();
             case TokenType.KeywordReturn:
                 _index++;
                 {
@@ -26,7 +33,7 @@ public partial class Parser
                         throw new Exception("Statements should not be allowed at root of file");
                     var func = Head.GetClosestFunction();// getting the function signature
                     var type = func.Type;
-                    if (Current.Type == TokenType.Semicolon && type.Kind == TypeKind.Void)
+                    if (Current.Type == TokenType.Semicolon)
                     {
                         _index++;
                         return new ReturnStatement(null);
@@ -56,9 +63,9 @@ public partial class Parser
                             ));
                     _index++;
                     var expr = _binder.BindExpression(ParseExpression());
-                    if (expr.BoundType.Kind == Type.TypeKind.Half
-                        || expr.BoundType.Kind == Type.TypeKind.Float
-                        || expr.BoundType.Kind == Type.TypeKind.Double)
+                    if (expr.BoundType.Kind == TypeKind.Half
+                        || expr.BoundType.Kind == TypeKind.Float
+                        || expr.BoundType.Kind == TypeKind.Double)
                         CompilationUnit.Report(new ReportedDiagnostic(
                             DiagnosticContext.Diagnostics["_intOrBoolExpression"],
                             _lexer.GetPosition(Previous)
@@ -91,9 +98,9 @@ public partial class Parser
                             ));
                     _index++;
                     var expr = _binder.BindExpression(ParseExpression());
-                    if (expr.BoundType.Kind == Type.TypeKind.Half
-                        || expr.BoundType.Kind == Type.TypeKind.Float
-                        || expr.BoundType.Kind == Type.TypeKind.Double)
+                    if (expr.BoundType.Kind == TypeKind.Half
+                        || expr.BoundType.Kind == TypeKind.Float
+                        || expr.BoundType.Kind == TypeKind.Double)
                         CompilationUnit.Report(new ReportedDiagnostic(
                             DiagnosticContext.Diagnostics["_intOrBoolExpression"],
                             _lexer.GetPosition(Previous)
@@ -123,9 +130,9 @@ public partial class Parser
                             ));
                     _index++;
                     var expr = _binder.BindExpression(ParseExpression());
-                    if (expr.BoundType.Kind == Type.TypeKind.Half
-                        || expr.BoundType.Kind == Type.TypeKind.Float
-                        || expr.BoundType.Kind == Type.TypeKind.Double)
+                    if (expr.BoundType.Kind == TypeKind.Half
+                        || expr.BoundType.Kind == TypeKind.Float
+                        || expr.BoundType.Kind == TypeKind.Double)
                         CompilationUnit.Report(new ReportedDiagnostic(
                             DiagnosticContext.Diagnostics["_intOrBoolExpression"],
                             _lexer.GetPosition(Previous)
@@ -156,23 +163,24 @@ public partial class Parser
 
                     var declOrExpr =
                         Current.Type != TokenType.Semicolon ?
-                        ParseDeclaration(true) ??
+                        ParseDeclaration() ??
                         (object)_binder.BindExpression(ParseExpression())
                         : null;
-                    if (Current.Type != TokenType.Semicolon)
+                    if (declOrExpr is not IDeclaration && Current.Type != TokenType.Semicolon)
                         CompilationUnit.Report(new ReportedDiagnostic(
                             DiagnosticContext.Diagnostics["_missingSemicolon"],
                             _lexer.GetPosition(Previous)
                             ));
-                    _index++;
+                    if (declOrExpr is not IDeclaration)
+                        _index++;
                     var condition =
                         Current.Type != TokenType.Semicolon ?
                         _binder.BindExpression(ParseExpression())
                         : null;
                     if (condition != null &&
-                        (condition.BoundType.Kind == Type.TypeKind.Half ||
-                        condition.BoundType.Kind == Type.TypeKind.Float ||
-                        condition.BoundType.Kind == Type.TypeKind.Double))
+                        (condition.BoundType.Kind == TypeKind.Half ||
+                        condition.BoundType.Kind == TypeKind.Float ||
+                        condition.BoundType.Kind == TypeKind.Double))
                         CompilationUnit.Report(new ReportedDiagnostic(
                             DiagnosticContext.Diagnostics["_intOrBoolExpression"],
                             _lexer.GetPosition(Previous)
@@ -215,6 +223,8 @@ public partial class Parser
                     _index++;
                     return new GroupStatement(gStatements);
                 }
+            case TokenType.KeywordSwitch:
+                return ParseSwitch();
             default:
                 {
                     var decl = ParseDeclaration();

@@ -1,0 +1,16 @@
+﻿/*
+	Sample for switch statement
+*/
+
+public int Main()
+{
+	for (int i = 0; i < 100; i++)
+	{
+		switch (i)
+		{
+		case 0: break;
+		default: break;
+		}
+	}
+	return 0;
+}

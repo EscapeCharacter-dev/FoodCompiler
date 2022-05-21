@@ -93,7 +93,6 @@ public partial class Parser
                 DiagnosticContext.Diagnostics["_invalidExpressionGrammar"],
                 _lexer.GetPosition(Previous)
                 ));
-            Console.WriteLine(Previous);
             return new StubTree(TreeType.Error, Current);
         }
     }

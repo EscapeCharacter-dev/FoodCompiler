@@ -13,7 +13,7 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        var input = File.ReadAllText("Samples/Square.fd");
+        var input = File.ReadAllText("Samples/SwitchTest.fd");
         var stopwatch = new Stopwatch();
         var driver = new CompilationDriver("Sample");
         driver.AddSource(input);

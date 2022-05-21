@@ -137,4 +137,6 @@ public enum TokenType
     LiteralBoolean,
     KeywordNull,
     DotDotDot,
+    KeywordStart,
+    KeywordEnd,
 }

@@ -86,7 +86,9 @@ public class Lexer : CompilationPart
             { "f64", TokenType.KeywordDouble },
             { "true", TokenType.KeywordTrue },
             { "false", TokenType.KeywordFalse },
-            { "dynamic", TokenType.KeywordDynamic }
+            { "dynamic", TokenType.KeywordDynamic },
+            { "start", TokenType.KeywordStart },
+            { "end", TokenType.KeywordEnd }
         };
     }
 

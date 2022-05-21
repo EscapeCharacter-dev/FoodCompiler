@@ -113,6 +113,7 @@ public partial class Parser
             {
                 _head += new ImperativeFunctionDeclaration(
                     (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), null);
+                _head += new VariableDeclaration("yield", type, Location.Local, false, null);
                 var stat = ParseStatement();
                 EndScope();
                 decl = new ImperativeFunctionDeclaration(
