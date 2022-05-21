@@ -316,7 +316,9 @@ public class Lexer : CompilationPart
             if (!decimal.TryParse(subs, NumberStyles.Number, CultureInfo.InvariantCulture, out var dResult))
             {
                 var tok = new Token(_index, TokenType.Error, null);
-                Console.WriteLine($"{GetPosition(tok)}: Invalid number '{subs}'");
+                CompilationUnit.Report(new ReportedDiagnostic(
+                    DiagnosticContext.Diagnostics["_lexInvalidNumber"],
+                    GetPosition(tok), subs));
                 return tok;
             }
             if (long.TryParse(subs, NumberStyles.Number, CultureInfo.InvariantCulture, out var lResult))

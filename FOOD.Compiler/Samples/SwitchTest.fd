@@ -4,11 +4,20 @@
 
 public int Main()
 {
+	const volatile int*&*&*&*&*&*&*&*[10]* array;
 	for (int i = 0; i < 100; i++)
 	{
 		switch (i)
 		{
-		case 0: break;
+		case 0:
+			return i;
+		start:
+			i *= 2;
+			case 1:
+				return i + 1;
+			case 2:
+				return i + 2;
+		end:
 		default: break;
 		}
 	}

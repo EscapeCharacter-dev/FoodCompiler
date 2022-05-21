@@ -84,5 +84,4 @@ public enum TreeType
 
     Compound,
     New,
-    EnumAccess,
 }

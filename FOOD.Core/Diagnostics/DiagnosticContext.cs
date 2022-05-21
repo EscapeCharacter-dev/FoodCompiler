@@ -15,9 +15,9 @@ public sealed class DiagnosticContext
     /// <summary>
     /// These are all of the possible diagnostics.
     /// </summary>
-    public static readonly Dictionary<string, Diagnostic> Diagnostics = new Dictionary<string, Diagnostic>()
+    public static readonly Dictionary<string, Diagnostic> Diagnostics = new()
     {
-        { "_lexInvalidNumber", new Diagnostic(DiagnosticLevel.Error, "Invalid number") },
+        { "_lexInvalidNumber", new Diagnostic(DiagnosticLevel.Error, "Invalid number '{0}'") },
         { "_lexMissingStringTerminator", new Diagnostic(DiagnosticLevel.Error, "Missing string terminator") },
         { "_lexUnexpectedChar", new Diagnostic(DiagnosticLevel.Error, "Unexpected character '{0}'") },
         { "_missingClosingBracket", new Diagnostic(DiagnosticLevel.Error, "Missing closing bracket") },
@@ -41,14 +41,22 @@ public sealed class DiagnosticContext
         { "_missingNamespace", new Diagnostic(DiagnosticLevel.Error, "The namespace {0}::{1} is not found") },
         { "_enumRequiresLiteralInteger", new Diagnostic(DiagnosticLevel.Error, "Enum requires literal integer") },
         { "_missingColon", new Diagnostic(DiagnosticLevel.Error, "Missing colon") },
+        { "_userDefinedPreprocessedError", new Diagnostic(DiagnosticLevel.Error, "(User-defined) {0}") },
+        { "_objectClassAlreadyDefined", new Diagnostic(DiagnosticLevel.Error, "The description for this object is already defined") },
+        { "_invalidUsageOfPPDirective", new Diagnostic(DiagnosticLevel.Error, "Invalid usage of the preprocessor directive {0}") },
+        { "_missingMacro", new Diagnostic(DiagnosticLevel.Error, "The macro '{0}' is missing") },
+        { "_duplicateDefault", new Diagnostic(DiagnosticLevel.Error, "Duplicate default case in switch") },
+        { "_missingEndKeyword", new Diagnostic(DiagnosticLevel.Error, "Expected end of subswitch") },
 
-        { "_WDuplicateUsingDirective", new Diagnostic(DiagnosticLevel.Warning2, "The namespace {0} is referenced many times") }
+        { "_WDuplicateUsingDirective", new Diagnostic(DiagnosticLevel.Warning2, "The namespace {0} is referenced many times") },
+        { "_WUndefiningInexistentMacro", new Diagnostic(DiagnosticLevel.Warning3, "The macro {0} is already undefined") },
+        {" _WUsedDefinedPreprocessed", new Diagnostic(DiagnosticLevel.Warning1, "(User-defined) {0}") }
     };
 
     /// <summary>
     /// A list of reported diagnostics.
     /// </summary>
-    private readonly List<ReportedDiagnostic> _reportedDiagnostics = new List<ReportedDiagnostic>();
+    private readonly List<ReportedDiagnostic> _reportedDiagnostics = new();
 
     /// <summary>
     /// Reports a diagnostic.

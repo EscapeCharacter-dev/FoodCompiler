@@ -53,7 +53,15 @@ public partial class Parser : CompilationPart
     /// </summary>
     private long _index = 0;
 
-    private Lexer _lexer;
+    /// <summary>
+    /// The lexer.
+    /// </summary>
+    private readonly Lexer _lexer;
+
+    /// <summary>
+    /// The binder.
+    /// </summary>
+    private readonly Binder _binder;
 
     /// <summary>
     /// Whether the end of the file has been reached or not.
@@ -85,8 +93,6 @@ public partial class Parser : CompilationPart
             return _tokens[_index - 1];
         }
     }
-
-    private Binder _binder;
 
     /// <summary>
     /// Builds a parser.

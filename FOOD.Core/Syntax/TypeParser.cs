@@ -75,7 +75,6 @@ public partial class Parser
             var list = new List<ParseType>();
             while (true)
             {
-                Console.WriteLine(Current);
                 list.Add(ParseType());
                 if (Current.Type != TokenType.Comma)
                 {
@@ -120,34 +119,65 @@ public partial class Parser
         if (kind == TypeKind.Error)
             return type;
         _index++;
-        while (Current.Type == TokenType.Star || Current.Type == TokenType.Ampersand)
+        while (Current.Type == TokenType.Star
+            || Current.Type == TokenType.Ampersand
+            || Current.Type == TokenType.OpenSquareBracket)
         {
             var tokenType = Current.Type;
             var subType = type;
             _index++;
             byte ptrQualifierField = 0b00000000;
-            while (Current.Type == TokenType.KeywordConst
+            if (tokenType == TokenType.OpenSquareBracket)
+            {
+                kind = TypeKind.Array;
+                type = new ParseType(qualifierField, kind, type);
+                var expr = _binder.BindExpression(P13());
+                if (!expr.BoundType.Kind.IsCompatibleWith(TypeKind.Int))
+                {
+                    CompilationUnit.Report(new ReportedDiagnostic(
+                        DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(expr.CoreTree.Token)));
+                    return new ParseType(qualifierField, TypeKind.Error);
+                }
+                if (Current.Type != TokenType.ClosedSquareBracket)
+                {
+                    CompilationUnit.Report(new ReportedDiagnostic(
+                        DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                        _lexer.GetPosition(Previous)
+                        ));
+                    return new ParseType(qualifierField, TypeKind.Error);
+                }
+                _index++;
+                type = new ParseType(ptrQualifierField, TypeKind.Array, subType);
+            }
+            else
+            {
+                while (Current.Type == TokenType.KeywordConst
                 || Current.Type == TokenType.KeywordVolatile
                 || Current.Type == TokenType.KeywordRestrict
                 || Current.Type == TokenType.KeywordAtomic)
-            {
-                ptrQualifierField |= Current.Type switch
                 {
-                    TokenType.KeywordConst => 0b00000001,
-                    TokenType.KeywordVolatile => 0b00000010,
-                    TokenType.KeywordRestrict => 0b00000100,
-                    TokenType.KeywordAtomic => 0b00001000,
-                    _ => 0b11111111
-                };
-                if (ptrQualifierField == 0b11111111)
-                    CompilationUnit.Report(new ReportedDiagnostic(
-                        DiagnosticContext.Diagnostics["_invalidTypeQualifier"],
-                        _lexer.GetPosition(Previous),
-                        Current.Value!
-                        ));
-                _index++;
+                    ptrQualifierField |= Current.Type switch
+                    {
+                        TokenType.KeywordConst => 0b00000001,
+                        TokenType.KeywordVolatile => 0b00000010,
+                        TokenType.KeywordRestrict => 0b00000100,
+                        TokenType.KeywordAtomic => 0b00001000,
+                        _ => 0b11111111
+                    };
+                    if (ptrQualifierField == 0b11111111)
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_invalidTypeQualifier"],
+                            _lexer.GetPosition(Previous),
+                            Current.Value!
+                            ));
+                    _index++;
+                }
+
+                type = new ParseType(
+                    ptrQualifierField,
+                    tokenType == TokenType.Star ? TypeKind.Pointer : TypeKind.Reference,
+                    subType);
             }
-            type = new ParseType(ptrQualifierField, tokenType == TokenType.Star ? TypeKind.Pointer : TypeKind.Reference, subType);
         }
         return type;
     }
