@@ -194,7 +194,55 @@ public partial class Parser
                     _index++;
                     var type = ParseType();
                     kind = TreeType.Sizeof;
-                    return new UnaryTree(TreeType.Sizeof, token, new TypeTree(TreeType.Type, token, type));
+                    return new UnaryTree(kind, token, new TypeTree(TreeType.Type, token, type));
+                }
+            case TokenType.OpenSquareBracket:
+                {
+                    _index++;
+                    var type = ParseType();
+                    if (Current.Type != TokenType.ClosedSquareBracket)
+                    {
+                        _index++;
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                            _lexer.GetPosition(Previous)
+                        ));
+                        return new StubTree(TreeType.Error, Current);
+                    }
+                    _index++;
+                    kind = TreeType.ArrayLiteral;
+                    if (Current.Type != TokenType.OpenCurlyBracket)
+                    {
+                        _index++;
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                            _lexer.GetPosition(Previous)
+                        ));
+                        return new StubTree(TreeType.Error, Current);
+                    }
+                    _index++;
+                    var values = new List<ParseTree>(4);
+                    values.Add(new TypeTree(TreeType.Type, token, type));
+                    while (Current.Type != TokenType.ClosedBracket)
+                    {
+                        values.Add(P15());
+                        if (Current.Type != TokenType.Comma)
+                        {
+                            if (Current.Type != TokenType.ClosedCurlyBracket)
+                            {
+                                _index++;
+                                CompilationUnit.Report(new ReportedDiagnostic(
+                                    DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                                    _lexer.GetPosition(Previous)
+                                ));
+                                return new StubTree(TreeType.Error, Current);
+                            }
+                            break;
+                        }
+                        _index++;
+                    }
+                    _index++;
+                    return new ExtensibleTree(kind, token, values.ToArray());
                 }
             case TokenType.KeywordNew:
                 {
@@ -205,7 +253,7 @@ public partial class Parser
                     {
                         _index++;
                         CompilationUnit.Report(new ReportedDiagnostic(
-                            DiagnosticContext.Diagnostics["_missing¸OpeningBracket"],
+                            DiagnosticContext.Diagnostics["_missingOpeningBracket"],
                             _lexer.GetPosition(Previous)
                             ));
                         return new StubTree(TreeType.Error, Current);

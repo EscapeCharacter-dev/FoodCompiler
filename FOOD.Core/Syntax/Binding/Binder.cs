@@ -170,6 +170,12 @@ public sealed class Binder : CompilationPart
                             DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(tree.Token)));
                         return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
                     }
+                    if (!left.BoundType.Kind.IsCompatibleWith(right.BoundType.Kind))
+                    {
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(tree.Token)));
+                        return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                    }
                     var boundType = left.BoundType.Kind < right.BoundType.Kind ? right.BoundType : left.BoundType;
                     return new BoundTree(binary, boundType, new[] { left, right });
                 }
@@ -428,6 +434,13 @@ public sealed class Binder : CompilationPart
                     }
                     else throw new NotImplementedException();
                 }
+            case TreeType.ArrayLiteral:
+                {
+                    var extensibleTree = (ExtensibleTree)tree;
+                    var subType = ((TypeTree)extensibleTree.ChildrenEnumerator.ElementAt(0)).Type;
+                    var type = new ParseType(subType.QualifierField, TypeKind.Array, subType, extensibleTree.ChildrenEnumerator.Count() - 1);
+                    return new BoundTree(tree, type, extensibleTree.ChildrenEnumerator.Skip(1).Each(x => BindExpression(x, expectedImplicitType)));
+                }
             case TreeType.Assign:
             case TreeType.SumAssign:
             case TreeType.DifferenceAssign:
@@ -437,7 +450,7 @@ public sealed class Binder : CompilationPart
                 {
                     var binary = (BinaryTree)tree;
                     var left = BindExpression(binary.Left);
-                    var right = BindExpression(binary.Right, left.BoundType);
+                    var right = BindExpression(binary.Right);
 
                     return new BoundTree(tree, left.BoundType, new[] { left, right });
                 }

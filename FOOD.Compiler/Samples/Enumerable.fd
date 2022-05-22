@@ -1,0 +1,22 @@
+﻿namespace Collections;
+
+public record Enumerator
+{
+	void *Data;        // A pointer to the data.
+	size  DataLength;  // The length of the data.
+	Enumerator *Next;  // The next enumerator item. null if end
+}
+
+public int Main()
+{
+	int a = 3;
+	Enumerator enumeratorObject = new Enumerator((void *)&a, sizeof int, null);
+	Enumerator *enumerator;
+	for (
+		enumerator = &enumeratorObject;
+		enumerator != null;
+		enumerator = enumerator->Next)
+	{
+		// do something with the data...
+	}
+}

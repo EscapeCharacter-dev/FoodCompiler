@@ -130,7 +130,6 @@ public partial class Parser
             if (tokenType == TokenType.OpenSquareBracket)
             {
                 kind = TypeKind.Array;
-                type = new ParseType(qualifierField, kind, type);
                 var expr = _binder.BindExpression(P13());
                 if (!expr.BoundType.Kind.IsCompatibleWith(TypeKind.Int))
                 {
@@ -147,7 +146,7 @@ public partial class Parser
                     return new ParseType(qualifierField, TypeKind.Error);
                 }
                 _index++;
-                type = new ParseType(ptrQualifierField, TypeKind.Array, subType);
+                type = new ParseType(ptrQualifierField, kind, subType);
             }
             else
             {
