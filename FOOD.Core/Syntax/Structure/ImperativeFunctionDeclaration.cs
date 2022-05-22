@@ -23,6 +23,7 @@ public readonly struct ImperativeFunctionDeclaration : IFunctionDeclaration
         Location location,
         bool isPublic,
         ImmutableList<VariableDeclaration> parameters,
+        string[] attributes,
         Statement? body)
     {
         Name = name;
@@ -30,6 +31,7 @@ public readonly struct ImperativeFunctionDeclaration : IFunctionDeclaration
         Location = location;
         IsPublic = isPublic;
         Parameters = parameters;
+        Attributes = attributes;
         Body = body;
     }
     public ImmutableList<VariableDeclaration> Parameters { get; }
@@ -41,4 +43,6 @@ public readonly struct ImperativeFunctionDeclaration : IFunctionDeclaration
     public Location Location { get; }
 
     public bool IsPublic { get; }
+
+    public string[] Attributes { get; }
 }

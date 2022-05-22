@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace FOOD.Core.Syntax;
 public partial class Parser
 {
-    private IDeclaration? TryParseStructure(bool isPublic)
+    private IDeclaration? TryParseStructure(bool isPublic, string[] attributes)
     {
         if (Current.Type == TokenType.KeywordStruct
             || Current.Type == TokenType.KeywordRecord
@@ -54,7 +54,7 @@ public partial class Parser
             StartScope();
             // structure signature only
             _head += new StructureDeclaration(
-                ident, new ParseType(0, TypeKind.Struct), Location.Static, isPublic, Array.Empty<IDeclaration>(), kind, Head);
+                ident, new ParseType(0, TypeKind.Struct), Location.Static, isPublic, Array.Empty<IDeclaration>(), kind, Head, attributes);
             while (true)
             {
                 if (Current.Type == TokenType.ClosedCurlyBracket)
@@ -100,7 +100,7 @@ public partial class Parser
             EndScope();
             _index++;
             var decl = new StructureDeclaration(
-                ident, new ParseType(0, TypeKind.Struct, null, ident), Location.Static, isPublic, members.ToArray(), kind, past);
+                ident, new ParseType(0, TypeKind.Struct, null, ident), Location.Static, isPublic, members.ToArray(), kind, past, attributes);
             _head += decl;
             return decl;
         }
@@ -197,7 +197,7 @@ public partial class Parser
             _index++;
             var decl =
                 new EnumDeclaration(ident, new ParseType(0, TypeKind.Enum, null, ident),
-                Location.Static, isPublic, members.ToArray(), Head);
+                Location.Static, isPublic, members.ToArray(), attributes, Head);
             _head += decl;
             return decl;
 

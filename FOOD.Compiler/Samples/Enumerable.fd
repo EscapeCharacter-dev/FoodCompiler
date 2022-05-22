@@ -11,6 +11,8 @@ public void Callback() {}
 
 public double Square(double x): x * x;
 
+public void DynamicFunc() {}
+
 public int Main()
 {
 	int a = 3;

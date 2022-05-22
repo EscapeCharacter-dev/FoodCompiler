@@ -18,14 +18,57 @@ public partial class Parser
     public IDeclaration? ParseDeclaration(bool simple = false)
     {
         if (!simple && TryParseDirective()) return null;
+        var attributeList = new List<string>();
+        if (Current.Type == TokenType.OpenSquareBracket)
+        {
+            _index++;
+            while (Current.Type != TokenType.ClosedSquareBracket)
+            {
+                if (Current.Type != TokenType.Identifier)
+                {
+                    CompilationUnit.Report(new ReportedDiagnostic(
+                        DiagnosticContext.Diagnostics["_expectedIdentifier"],
+                        _lexer.GetPosition(Current)
+                        ));
+                    _index++;
+                    return null;
+                }
+                var attribute = (string)Current.Value!;
+                _index++;
+                attributeList.Add(attribute);
+                if (Current.Type == TokenType.Comma)
+                    _index++;
+                else if (Current.Type == TokenType.ClosedSquareBracket)
+                    break;
+                else
+                {
+                    CompilationUnit.Report(new ReportedDiagnostic(
+                        DiagnosticContext.Diagnostics["_missingCommaOrClosingBracket"],
+                        _lexer.GetPosition(Current)
+                        ));
+                    _index++;
+                    return null;
+                }
+            }
+            if (attributeList.Count == 0)
+            {
+                CompilationUnit.Report(new ReportedDiagnostic(
+                    DiagnosticContext.Diagnostics["_expectedIdentifier"],
+                    _lexer.GetPosition(Current)
+                    ));
+                _index++;
+                return null;
+            }
+            _index++;
+        }
         var isPublic = false;
         if (Head.Parent == null && Current.Type == TokenType.KeywordPublic)
         {
-            _index++;
             isPublic = true;
+            _index++;
         }
 
-        var structAttempt = TryParseStructure(isPublic);
+        var structAttempt = TryParseStructure(isPublic, attributeList.ToArray());
         if (!simple && structAttempt != null) return structAttempt;
 
         var type = ParseType();
@@ -47,13 +90,13 @@ public partial class Parser
 
         if (simple)
         {
-            decl = new VariableDeclaration((string)ident.Value!, type, Location.Argument, isPublic, null);
+            decl = new VariableDeclaration((string)ident.Value!, type, Location.Argument, isPublic, null, attributeList.ToArray());
             return decl;
         }
         if (Current.Type == TokenType.Semicolon)
         {
             _index++;
-            decl = new VariableDeclaration((string)ident.Value!, type, Location.Local, isPublic, null);
+            decl = new VariableDeclaration((string)ident.Value!, type, Location.Local, isPublic, null, attributeList.ToArray());
             _head += decl;
             return decl;
         }
@@ -94,7 +137,7 @@ public partial class Parser
             {
                 _index++;
                 _head += new SimpleFunctionDeclaration(
-                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), null);
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), null);
                 var funcExpr = _binder.BindExpression(ParseExpression(), type);
                 if (Current.Type != TokenType.Semicolon)
                     CompilationUnit.Report(new ReportedDiagnostic(
@@ -102,7 +145,7 @@ public partial class Parser
                         _lexer.GetPosition(Previous)
                         ));
                 decl = new SimpleFunctionDeclaration(
-                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), funcExpr);
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), funcExpr);
                 _index++;
                 EndScope();
                 
@@ -112,12 +155,12 @@ public partial class Parser
             else if (Current.Type == TokenType.OpenCurlyBracket)
             {
                 _head += new ImperativeFunctionDeclaration(
-                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), null);
-                _head += new VariableDeclaration("yield", type, Location.Local, false, null);
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), null);
+                _head += new VariableDeclaration("yield", type, Location.Local, false, null, Array.Empty<string>());
                 var stat = ParseStatement();
                 EndScope();
                 decl = new ImperativeFunctionDeclaration(
-                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), stat);
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), stat);
                 _head += decl;
                 return decl;
             }
@@ -140,7 +183,7 @@ public partial class Parser
                 _lexer.GetPosition(Previous)
                 ));
         _index++;
-        decl = new VariableDeclaration((string)ident.Value!, type, Location.Local, isPublic, expr);
+        decl = new VariableDeclaration((string)ident.Value!, type, Location.Local, isPublic, expr, attributeList.ToArray());
         _head += decl;
         return decl;
     }

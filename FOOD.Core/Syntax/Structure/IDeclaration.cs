@@ -32,4 +32,9 @@ public interface IDeclaration
     /// Is the declaration public.
     /// </summary>
     public bool IsPublic { get; }
+
+    /// <summary>
+    /// The list of attributes that this declaration is affected by.
+    /// </summary>
+    public string[] Attributes { get; }
 }

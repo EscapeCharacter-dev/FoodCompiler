@@ -15,15 +15,12 @@ public static class Program
     {
         var input = File.ReadAllText("Samples/References.fd");
         var stopwatch = new Stopwatch();
-        for (int i = 0; i < 2; i++)
-        {
-            var driver = new CompilationDriver("Sample");
-            driver.AddSource(input);
-            stopwatch.Restart();
-            driver.Parse();
-            stopwatch.Stop();
-            driver.DisplayDiagnostics();
-            Console.WriteLine(stopwatch.ElapsedMilliseconds + " ms");
-        }
+        var driver = new CompilationDriver("Sample");
+        driver.AddSource("References", input);
+        stopwatch.Restart();
+        driver.Parse();
+        stopwatch.Stop();
+        driver.DisplayDiagnostics();
+        Console.WriteLine(stopwatch.ElapsedMilliseconds + " ms");
     }
 }

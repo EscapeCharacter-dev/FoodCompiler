@@ -19,12 +19,15 @@ public readonly struct EnumDeclaration : IDeclaration
     public readonly (string Identifier, int Index)[] Members;
     public readonly Scope MemberScope;
 
+    public string[] Attributes { get; }
+
     public EnumDeclaration(
         string name,
         ParseType type,
         Location location,
         bool isPublic,
         (string Identifier, int Index)[] members,
+        string[] attributes,
         Scope memberScope)
     {
         Name = name;
@@ -33,6 +36,7 @@ public readonly struct EnumDeclaration : IDeclaration
         IsPublic = isPublic;
         Members = members;
         MemberScope = memberScope;
+        Attributes = attributes;
     }
 
     /// <summary>

@@ -20,7 +20,7 @@ public sealed class CompilationDriver
         Module = new Module(moduleName);
     }
 
-    public void AddSource(string source) => _units.Add(new CompilationUnit(this, source));
+    public void AddSource(string name, string source) => _units.Add(new CompilationUnit(this, source, name));
 
     public void Parse()
     {

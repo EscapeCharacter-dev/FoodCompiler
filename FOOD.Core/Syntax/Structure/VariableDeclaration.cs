@@ -7,13 +7,16 @@ public readonly struct VariableDeclaration : IDeclaration
 {
     public readonly BoundTree? BoundTree;
 
-    public VariableDeclaration(string name, ParseType type, Location location, bool isPublic, BoundTree? expr)
+    public VariableDeclaration(
+        string name, ParseType type, Location location,
+        bool isPublic, BoundTree? expr, string[] attributes)
     {
         BoundTree = expr;
         Name = name;
         Type = type;
         Location = location;
         IsPublic = isPublic;
+        Attributes = attributes;
     }
 
     public string Name { get; }
@@ -23,4 +26,6 @@ public readonly struct VariableDeclaration : IDeclaration
     public Location Location { get; }
 
     public bool IsPublic { get; }
+
+    public string[] Attributes { get; }
 }

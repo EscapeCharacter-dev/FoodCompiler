@@ -20,6 +20,11 @@ public sealed class CompilationUnit
     /// The input source of this compilation unit.
     /// </summary>
     public readonly string Input;
+
+    /// <summary>
+    /// The name of the file (used when displaying errors)
+    /// </summary>
+    public readonly string Name;
     
     /// <summary>
     /// The parser gives the meaning of the text to the compiler.
@@ -48,10 +53,11 @@ public sealed class CompilationUnit
     /// Initializes a new instance of the class <see cref="CompilationUnit"/>.
     /// </summary>
     /// <param name="input">The source input.</param>
-    public CompilationUnit(CompilationDriver driver, string input)
+    public CompilationUnit(CompilationDriver driver, string input, string name)
     {
         _diagContext = new DiagnosticContext();
         Driver = driver;
+        Name = name;
 
         Input = input + " ";
         Parser = new Parser(this, Input);
@@ -80,6 +86,9 @@ public sealed class CompilationUnit
     {
         AnsiVTConsole.SetPalette();
         var diags = _diagContext.Get();
+        if (diags.IsEmpty)
+            return;
+        Console.WriteLine($"Diagnostics thrown when compiling {Name}:");
         foreach (var diag in diags)
         {
             Console.Write(diag.Position + ": ");
@@ -109,5 +118,7 @@ public sealed class CompilationUnit
             }
             AnsiVTConsole.SetPalette();
         }
+        for (var i = 0; i < Console.WindowWidth; i++) Console.Write('=');
+        Console.WriteLine('\n');
     }
 }

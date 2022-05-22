@@ -2,6 +2,7 @@
 	Sample for testing references & pointers
 */
 
+[no_discard]
 public int Main()
 {
 	int value = 42;

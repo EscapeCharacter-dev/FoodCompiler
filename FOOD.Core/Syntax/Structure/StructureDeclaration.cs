@@ -16,6 +16,8 @@ public readonly struct StructureDeclaration : IDeclaration
 
     public bool IsPublic { get; }
 
+    public string[] Attributes { get; }
+
     public readonly IDeclaration[] Members;
     public readonly StructureKind Kind;
     public readonly Scope MemberScope;
@@ -27,7 +29,8 @@ public readonly struct StructureDeclaration : IDeclaration
         bool isPublic,
         IDeclaration[] members,
         StructureKind kind,
-        Scope memberScope)
+        Scope memberScope,
+        string[] attributes)
     {
         Name = name;
         Type = type;
@@ -36,6 +39,7 @@ public readonly struct StructureDeclaration : IDeclaration
         Members = members;
         Kind = kind;
         MemberScope = memberScope;
+        Attributes = attributes;
     }
 
     /// <summary>
