@@ -7,6 +7,10 @@ public record Enumerator
 	Enumerator *Next;  // The next enumerator item. null if end
 }
 
+public void Callback() {}
+
+public double Square(double x): x * x;
+
 public int Main()
 {
 	int a = 3;
@@ -19,4 +23,9 @@ public int Main()
 	{
 		// do something with the data...
 	}
+	function void() myCallback = Callback;
+	function double(double) squareCallback = Square;
+	double x = squareCallback(300);
+	yield = 0;
+	return;
 }

@@ -226,6 +226,16 @@ public sealed class Binder : CompilationPart
             case TreeType.Identifier:
                 {
                     var ident = (string)((StubTree)tree).Token.Value!;
+                    if (expectedImplicitType != null
+                        && expectedImplicitType.Kind == TypeKind.Function)
+                    {
+                        if (CompilationUnit.Parser.Head.IsSymbolDeclared(ident)
+                            && expectedImplicitType.SubType!.Kind.IsCompatibleWith(CompilationUnit.Parser.Head.GetDeclaration(ident)!.Type.Kind))
+                            return new BoundTree(tree, expectedImplicitType,
+                                Enumerable.Empty<BoundTree>());
+                        else CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_missingSymbol"], _lexer.GetPosition(tree.Token), ident));
+                    }
                     if (CompilationUnit.Parser.Head.IsSymbolDeclared(ident))
                         return new BoundTree(tree, CompilationUnit.Parser.Head.GetDeclaration(ident)!.Type,
                             Enumerable.Empty<BoundTree>());
@@ -324,7 +334,29 @@ public sealed class Binder : CompilationPart
                             return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
                         }
                         var decl = CompilationUnit.Parser.Head.GetDeclaration(funcName);
-                        if (decl is not IFunctionDeclaration)
+                        if (decl is VariableDeclaration v)
+                        {
+                            var parameters = ((ParseType[])v.Type.Extra!);
+                            if (decl.Type.Kind != TypeKind.Function)
+                            {
+                                CompilationUnit.Report(new ReportedDiagnostic(
+                                    DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(tree.Token), funcName));
+                                return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                            }
+                            if (parameters.Count() != eTree.ChildrenEnumerator.Count() - 1)
+                            {
+                                CompilationUnit.Report(new ReportedDiagnostic(
+                                    DiagnosticContext.Diagnostics["_invalidFunctionSignature"], _lexer.GetPosition(tree.Token), funcName));
+                                return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                            }
+                            var vParam = new List<BoundTree>();
+                            for (var i = 1; i < eTree.ChildrenEnumerator.Count(); i++)
+                                vParam.Add(
+                                    BindExpression(eTree.ChildrenEnumerator.ElementAt(i),
+                                    parameters.ElementAt(i - 1)));
+                            return new BoundTree(tree, decl.Type.SubType!, vParam);
+                        }
+                        else if (decl is not IFunctionDeclaration)
                         {
                             CompilationUnit.Report(new ReportedDiagnostic(
                                 DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(tree.Token), funcName));
