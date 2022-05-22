@@ -27,5 +27,6 @@ public int Main()
 	function double(double) squareCallback = Square;
 	double x = squareCallback(300);
 	yield = 0;
+
 	return;
 }

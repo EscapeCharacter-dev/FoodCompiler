@@ -131,7 +131,6 @@ public sealed class Binder : CompilationPart
             case TreeType.PrefixDecrement:
             case TreeType.UnaryPlus:
             case TreeType.UnaryMinus:
-            case TreeType.Dereference:
             case TreeType.LogicalNegation:
             case TreeType.BitwiseNegation:
                 {
@@ -144,9 +143,23 @@ public sealed class Binder : CompilationPart
                     }
                     return new BoundTree(tree, sub.BoundType, new[] { sub });
                 }
+            case TreeType.Dereference:
+                {
+                    var sub = BindExpression(((UnaryTree)tree).Child);
+                    if (sub.BoundType.Kind != TypeKind.Pointer
+                        && sub.BoundType.Kind != TypeKind.Reference)
+                    {
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(tree.Token)));
+                        return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                    }
+                    return new BoundTree(tree, sub.BoundType.SubType!, new[] { sub });
+                }
             case TreeType.AddressOf:
                 {
                     var sub = BindExpression(((UnaryTree)tree).Child);
+                    if (expectedImplicitType != null && expectedImplicitType.Kind == TypeKind.Reference)
+                        return new BoundTree(tree, new ParseType(0, TypeKind.Reference, sub.BoundType), new[] { sub });
                     return new BoundTree(tree, new ParseType(0, TypeKind.Pointer, sub.BoundType), new[] { sub });
                 }
             case TreeType.Addition:
@@ -483,6 +496,18 @@ public sealed class Binder : CompilationPart
                     var binary = (BinaryTree)tree;
                     var left = BindExpression(binary.Left);
                     var right = BindExpression(binary.Right);
+
+                    if (left.BoundType.Kind == TypeKind.Reference
+                        || (left.BoundType.QualifierField & 0b00000001) != 0
+                        || left.CoreTree.TreeType != TreeType.Identifier
+                        && left.CoreTree.TreeType != TreeType.MemberAccess
+                        && left.CoreTree.TreeType != TreeType.PointerMemberAccess)
+                    {
+
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_cannotModifyConstantValue"], _lexer.GetPosition(tree.Token)));
+                        return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                    }
 
                     return new BoundTree(tree, left.BoundType, new[] { left, right });
                 }

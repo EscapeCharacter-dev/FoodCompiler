@@ -1,0 +1,12 @@
+﻿/*
+	Sample for testing references & pointers
+*/
+
+public int Main()
+{
+	int value = 42;
+
+	int &ref = &value;
+
+	return 0;
+}

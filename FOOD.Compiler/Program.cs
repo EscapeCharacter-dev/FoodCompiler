@@ -13,7 +13,7 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        var input = File.ReadAllText("Samples/Enumerable.fd");
+        var input = File.ReadAllText("Samples/References.fd");
         var stopwatch = new Stopwatch();
         for (int i = 0; i < 2; i++)
         {
