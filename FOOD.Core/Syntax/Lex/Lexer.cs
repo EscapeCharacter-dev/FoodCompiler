@@ -17,15 +17,14 @@ public class Lexer : CompilationPart
     static Lexer()
     {
         if (_keywordLookup == null)
-            Initialize();
+            _keywordLookup = Initialize();
     }
 
     /// <summary>
     /// Initialies the lexer.
     /// </summary>
-    public static void Initialize()
-    {
-        _keywordLookup = new Dictionary<string, TokenType>
+    public static Dictionary<string, TokenType> Initialize() =>
+         new()
         {
             { "atomic", TokenType.KeywordAtomic },
             { "break", TokenType.KeywordBreak },
@@ -63,7 +62,6 @@ public class Lexer : CompilationPart
             { "static", TokenType.KeywordStatic },
             { "struct", TokenType.KeywordStruct },
             { "switch", TokenType.KeywordSwitch },
-            { "typedef", TokenType.KeywordTypedef },
             { "uchar", TokenType.KeywordByte },
             { "union", TokenType.KeywordUnion },
             { "uint", TokenType.KeywordUInt },
@@ -87,9 +85,11 @@ public class Lexer : CompilationPart
             { "true", TokenType.KeywordTrue },
             { "false", TokenType.KeywordFalse },
             { "start", TokenType.KeywordStart },
-            { "end", TokenType.KeywordEnd }
-        };
-    }
+            { "end", TokenType.KeywordEnd },
+            { "class", TokenType.KeywordClass },
+            { "string", TokenType.KeywordString },
+            { "lengthof", TokenType.KeywordLengthof }
+         };
 
     /// <summary>
     /// The input text.
@@ -278,7 +278,7 @@ public class Lexer : CompilationPart
         return once;
     }
 
-    private static Dictionary<string, TokenType> _keywordLookup;
+    private readonly static Dictionary<string, TokenType> _keywordLookup;
 
     /// <summary>
     /// Fetches a new token.

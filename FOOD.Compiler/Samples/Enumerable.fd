@@ -1,5 +1,7 @@
 ﻿namespace Collections;
 
+class Handle = void *;
+
 public record Enumerator
 {
 	void *Data;        // A pointer to the data.
@@ -7,28 +9,15 @@ public record Enumerator
 	Enumerator *Next;  // The next enumerator item. null if end
 }
 
-public void Callback() {}
-
-public double Square(double x): x * x;
-
-public void DynamicFunc() {}
-
 public int Main()
 {
-	int a = 3;
-	Enumerator enumeratorObject = new Enumerator((void *)&a, sizeof int, null);
-	Enumerator *enumerator;
-	for (
-		enumerator = &enumeratorObject;
-		enumerator != null;
-		enumerator = enumerator->Next)
-	{
-		// do something with the data...
-	}
-	function void() myCallback = Callback;
-	function double(double) squareCallback = Square;
-	double x = squareCallback(300);
-	yield = 0;
+	int value = 42;
+	[mutable_ref] int &ref = &value;
+	ref = &value;
 
+	string helloWorld = "Hello, World!";
+	const int length = lengthof helloWorld;
+
+	yield = 0;
 	return;
 }

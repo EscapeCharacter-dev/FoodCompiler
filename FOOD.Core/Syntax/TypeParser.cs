@@ -55,6 +55,7 @@ public partial class Parser
             TokenType.KeywordLong => TypeKind.Long,
             TokenType.KeywordULong => TypeKind.ULong,
             TokenType.KeywordDouble => TypeKind.Double,
+            TokenType.KeywordString => TypeKind.String,
             _ => TypeKind.Error
         };
         if (kind == TypeKind.Error && Current.Type == TokenType.KeywordFunction)

@@ -110,4 +110,5 @@ public enum TypeKind
     /// A structure is a block of multiple <i>members</i>.
     /// </summary>
     Struct,
+    String,
 }

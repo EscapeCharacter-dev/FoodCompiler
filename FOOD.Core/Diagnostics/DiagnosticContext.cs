@@ -48,6 +48,7 @@ public sealed class DiagnosticContext
         { "_duplicateDefault", new Diagnostic(DiagnosticLevel.Error, "Duplicate default case in switch") },
         { "_missingEndKeyword", new Diagnostic(DiagnosticLevel.Error, "Expected end of subswitch") },
         { "_cannotModifyConstantValue", new Diagnostic(DiagnosticLevel.Error, "Cannot modify a constant value or expression") },
+        { "_missingEqual", new Diagnostic(DiagnosticLevel.Error, "Missing equal symbol =") },
 
         { "_WDuplicateUsingDirective", new Diagnostic(DiagnosticLevel.Warning2, "The namespace {0} is referenced many times") },
         { "_WUndefiningInexistentMacro", new Diagnostic(DiagnosticLevel.Warning3, "The macro {0} is already undefined") },

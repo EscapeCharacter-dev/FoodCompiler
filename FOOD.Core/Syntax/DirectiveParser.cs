@@ -62,6 +62,31 @@ public partial class Parser
             _index++;
             return true;
         }
+        else if (Current.Type == TokenType.KeywordClass)
+        {
+            _index++;
+            if (Current.Type != TokenType.Identifier)
+                CompilationUnit.Report(new ReportedDiagnostic(
+                    DiagnosticContext.Diagnostics["_expectedIdentifier"],
+                    _lexer.GetPosition(Previous)
+                    ));
+            var className = (string)Current.Value!;
+            _index++;
+            if (Current.Type != TokenType.Equal)
+                CompilationUnit.Report(new ReportedDiagnostic(
+                    DiagnosticContext.Diagnostics["_missingEqual"],
+                    _lexer.GetPosition(Previous)
+                    ));
+            _index++;
+            var aliasFor = ParseType();
+            if (Current.Type != TokenType.Semicolon)
+                CompilationUnit.Report(new ReportedDiagnostic(
+                    DiagnosticContext.Diagnostics["_missingSemicolon"],
+                    _lexer.GetPosition(Previous)
+                    ));
+            _index++;
+            return true;
+        }
         return false;
     }
 }

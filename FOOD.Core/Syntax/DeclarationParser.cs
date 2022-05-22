@@ -100,6 +100,12 @@ public partial class Parser
             _head += decl;
             return decl;
         }
+        var faillible = false;
+        if (Current.Type == TokenType.Exclamation)
+        {
+            _index++;
+            faillible = true;
+        }
         if (Current.Type == TokenType.OpenBracket)
         {
             _index++;
@@ -137,7 +143,7 @@ public partial class Parser
             {
                 _index++;
                 _head += new SimpleFunctionDeclaration(
-                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), null);
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), null, faillible);
                 var funcExpr = _binder.BindExpression(ParseExpression(), type);
                 if (Current.Type != TokenType.Semicolon)
                     CompilationUnit.Report(new ReportedDiagnostic(
@@ -145,7 +151,9 @@ public partial class Parser
                         _lexer.GetPosition(Previous)
                         ));
                 decl = new SimpleFunctionDeclaration(
-                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), funcExpr);
+                    (string)ident.Value!, type, Location.Static,
+                    isPublic, parameters.ToImmutableList(), attributeList.ToArray(),
+                    funcExpr, faillible);
                 _index++;
                 EndScope();
                 
@@ -155,15 +163,22 @@ public partial class Parser
             else if (Current.Type == TokenType.OpenCurlyBracket)
             {
                 _head += new ImperativeFunctionDeclaration(
-                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), null);
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), null, faillible);
                 _head += new VariableDeclaration("yield", type, Location.Local, false, null, Array.Empty<string>());
                 var stat = ParseStatement();
                 EndScope();
                 decl = new ImperativeFunctionDeclaration(
-                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), stat);
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), stat, faillible);
                 _head += decl;
                 return decl;
             }
+        }
+        else if (faillible)
+        {
+            CompilationUnit.Report(new ReportedDiagnostic(
+                DiagnosticContext.Diagnostics["_missingOpeningBracket"],
+                    _lexer.GetPosition(Current)
+                    ));
         }
 
         if (Current.Type != TokenType.Equal)

@@ -13,10 +13,10 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        var input = File.ReadAllText("Samples/References.fd");
+        var input = File.ReadAllText("Samples/Enumerable.fd");
         var stopwatch = new Stopwatch();
         var driver = new CompilationDriver("Sample");
-        driver.AddSource("References", input);
+        driver.AddSource("Enumerable", input);
         stopwatch.Restart();
         driver.Parse();
         stopwatch.Stop();

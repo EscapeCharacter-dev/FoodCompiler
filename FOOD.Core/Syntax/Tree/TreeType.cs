@@ -85,4 +85,5 @@ public enum TreeType
     Compound,
     New,
     ArrayLiteral,
+    Lengthof,
 }

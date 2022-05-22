@@ -94,11 +94,22 @@ public sealed class Binder : CompilationPart
                         }
                     case TokenType.LiteralString:
                         return new BoundTree(tree,
-                            new ParseType(1, TypeKind.Pointer, new ParseType(0, TypeKind.SByte)), Enumerable.Empty<BoundTree>());
+                            new ParseType(1, TypeKind.String, null, ((string)tree.Token.Value!).Length), Enumerable.Empty<BoundTree>());
                     default: throw new NotImplementedException();
                 }
-            case TreeType.Sizeof:
-                    return new BoundTree(tree, new ParseType(1, TypeKind.ULong), Enumerable.Empty<BoundTree>());
+            case TreeType.Sizeof: return new BoundTree(tree, new ParseType(1, TypeKind.ULong), Enumerable.Empty<BoundTree>());
+            case TreeType.Lengthof:
+                {
+                    var uTree = (UnaryTree)tree;
+                    var child = BindExpression(uTree.Child);
+                    if (child.BoundType.Kind != TypeKind.String)
+                    {
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(tree.Token)));
+                        return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
+                    }
+                    return new BoundTree(tree, new ParseType(1, TypeKind.UInt), new[] { child });
+                }
             case TreeType.New:
                 {
                     var type = ((TypeTree)tree.ChildrenEnumerator.ElementAt(0)).Type;
@@ -503,13 +514,17 @@ public sealed class Binder : CompilationPart
                         && left.CoreTree.TreeType != TreeType.MemberAccess
                         && left.CoreTree.TreeType != TreeType.PointerMemberAccess)
                     {
-
+                        if (left.CoreTree.TreeType == TreeType.Identifier)
+                        {
+                            var decl = CompilationUnit.Parser.Head.GetDeclaration((string)left.CoreTree.Token.Value!);
+                            if (decl != null && decl.Attributes.Contains("mutable_ref"))
+                                goto mutableRef;
+                        }
                         CompilationUnit.Report(new ReportedDiagnostic(
                             DiagnosticContext.Diagnostics["_cannotModifyConstantValue"], _lexer.GetPosition(tree.Token)));
                         return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
                     }
-
-                    return new BoundTree(tree, left.BoundType, new[] { left, right });
+                mutableRef: return new BoundTree(tree, left.BoundType, new[] { left, right });
                 }
             case TreeType.BitwiseAndAssign:
             case TreeType.BitwiseExclusiveOrAssign:

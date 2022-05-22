@@ -121,7 +121,6 @@ public enum TokenType
     KeywordStatic,
     KeywordStruct,
     KeywordSwitch,
-    KeywordTypedef,
     KeywordUnion,
     KeywordUInt,
     KeywordULong,
@@ -139,4 +138,7 @@ public enum TokenType
     DotDotDot,
     KeywordStart,
     KeywordEnd,
+    KeywordClass,
+    KeywordString,
+    KeywordLengthof,
 }

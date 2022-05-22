@@ -196,6 +196,12 @@ public partial class Parser
                     kind = TreeType.Sizeof;
                     return new UnaryTree(kind, token, new TypeTree(TreeType.Type, token, type));
                 }
+            case TokenType.KeywordLengthof:
+                {
+                    _index++;
+                    kind = TreeType.Lengthof;
+                    return new UnaryTree(kind, token, PDots());
+                }
             case TokenType.OpenSquareBracket:
                 {
                     _index++;

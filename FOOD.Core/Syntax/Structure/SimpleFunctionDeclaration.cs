@@ -24,7 +24,8 @@ public readonly struct SimpleFunctionDeclaration : IFunctionDeclaration
         bool isPublic,
         ImmutableList<VariableDeclaration> parameters,
         string[] attributes,
-        BoundTree? body)
+        BoundTree? body,
+        bool faillible)
     {
         Name = name;
         Type = type;
@@ -32,6 +33,7 @@ public readonly struct SimpleFunctionDeclaration : IFunctionDeclaration
         IsPublic = isPublic;
         Parameters = parameters;
         Attributes = attributes;
+        Faillible = faillible;
         Body = body;
     }
 
@@ -44,6 +46,8 @@ public readonly struct SimpleFunctionDeclaration : IFunctionDeclaration
     public Location Location { get; }
 
     public bool IsPublic { get; }
+
+    public bool Faillible { get; }
 
     public string[] Attributes { get; }
 }
