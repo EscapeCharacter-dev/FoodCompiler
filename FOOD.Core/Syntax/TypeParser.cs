@@ -131,7 +131,7 @@ public partial class Parser
             if (tokenType == TokenType.OpenSquareBracket)
             {
                 kind = TypeKind.Array;
-                var expr = _binder.BindExpression(P13());
+                var expr = Binder.BindExpression(P13());
                 if (!expr.BoundType.Kind.IsCompatibleWith(TypeKind.Int))
                 {
                     CompilationUnit.Report(new ReportedDiagnostic(

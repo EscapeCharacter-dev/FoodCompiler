@@ -37,7 +37,7 @@ public partial class Parser
             if (decl != null)
                 return new DeclarationStatement(decl);
             var nExpr = ParseExpression();
-            var expr = _binder.BindExpression(nExpr);
+            var expr = Binder.BindExpression(nExpr);
             if (Current.Type != TokenType.Semicolon)
             {
                 CompilationUnit.Report(new ReportedDiagnostic(
@@ -68,7 +68,7 @@ public partial class Parser
             _index++;
             return new ReturnStatement(null);
         }
-        var expr = _binder.BindExpression(ParseExpression(), type);
+        var expr = Binder.BindExpression(ParseExpression(), type);
         if (!type.Kind.IsCompatibleWith(expr.BoundType.Kind))
         {
             CompilationUnit.Report(new ReportedDiagnostic(
@@ -92,7 +92,7 @@ public partial class Parser
                 _lexer.GetPosition(Previous)
                 ));
         _index++;
-        var expr = _binder.BindExpression(ParseExpression());
+        var expr = Binder.BindExpression(ParseExpression());
         if (expr.BoundType.Kind == TypeKind.Half
             || expr.BoundType.Kind == TypeKind.Float
             || expr.BoundType.Kind == TypeKind.Double)
@@ -127,7 +127,7 @@ public partial class Parser
                 _lexer.GetPosition(Previous)
                 ));
         _index++;
-        var expr = _binder.BindExpression(ParseExpression());
+        var expr = Binder.BindExpression(ParseExpression());
         if (expr.BoundType.Kind == TypeKind.Half
             || expr.BoundType.Kind == TypeKind.Float
             || expr.BoundType.Kind == TypeKind.Double)
@@ -159,7 +159,7 @@ public partial class Parser
                 _lexer.GetPosition(Previous)
                 ));
         _index++;
-        var expr = _binder.BindExpression(ParseExpression());
+        var expr = Binder.BindExpression(ParseExpression());
         if (expr.BoundType.Kind == TypeKind.Half
             || expr.BoundType.Kind == TypeKind.Float
             || expr.BoundType.Kind == TypeKind.Double)
@@ -194,7 +194,7 @@ public partial class Parser
         var declOrExpr =
             Current.Type != TokenType.Semicolon ?
             ParseDeclaration() ??
-            (object)_binder.BindExpression(ParseExpression())
+            (object)Binder.BindExpression(ParseExpression())
             : null;
         if (declOrExpr is not IDeclaration && Current.Type != TokenType.Semicolon)
             CompilationUnit.Report(new ReportedDiagnostic(
@@ -205,7 +205,7 @@ public partial class Parser
             _index++;
         var condition =
             Current.Type != TokenType.Semicolon ?
-            _binder.BindExpression(ParseExpression())
+            Binder.BindExpression(ParseExpression())
             : null;
         if (condition != null &&
             (condition.BoundType.Kind == TypeKind.Half ||
@@ -222,7 +222,7 @@ public partial class Parser
                 ));
         _index++;
         var update = Current.Type != TokenType.ClosedBracket
-            ? _binder.BindExpression(ParseExpression())
+            ? Binder.BindExpression(ParseExpression())
             : null;
         if (Current.Type != TokenType.ClosedBracket)
             CompilationUnit.Report(new ReportedDiagnostic(

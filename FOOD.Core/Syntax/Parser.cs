@@ -61,7 +61,7 @@ public partial class Parser : CompilationPart
     /// <summary>
     /// The binder.
     /// </summary>
-    private readonly Binder _binder;
+    public readonly Binder Binder;
 
     /// <summary>
     /// Whether the end of the file has been reached or not.
@@ -101,7 +101,7 @@ public partial class Parser : CompilationPart
     public Parser(CompilationUnit unit, string source) : base(unit)
     {
         _lexer = new Lexer(CompilationUnit, source);
-        _binder = new Binder(CompilationUnit, _lexer);
+        Binder = new Binder(CompilationUnit, _lexer);
         Root = new Scope(null);
         _head = Root;
         var list = new List<Token>();

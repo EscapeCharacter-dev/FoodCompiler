@@ -35,7 +35,7 @@ public partial class Parser
             if (Current.Type == TokenType.KeywordCase)
             {
                 _index++;
-                var caseExpr = _binder.BindExpression(ParseExpression(), expectedType);
+                var caseExpr = Binder.BindExpression(ParseExpression(), expectedType);
                 if (Current.Type != TokenType.Colon)
                 {
                     CompilationUnit.Report(new ReportedDiagnostic(
@@ -113,7 +113,7 @@ public partial class Parser
                 _lexer.GetPosition(Current)
                 ));
         _index++;
-        var expr = _binder.BindExpression(ParseExpression());
+        var expr = Binder.BindExpression(ParseExpression());
         if (!expr.BoundType.Kind.IsCompatibleWith(TypeKind.Int))
             CompilationUnit.Report(new ReportedDiagnostic(
                 DiagnosticContext.Diagnostics["_intOrBoolExpression"],

@@ -421,10 +421,10 @@ public class Lexer : CompilationPart
                 _index--;
                 type = Operator2RepeatNotAllowed(TokenType.Slash, TokenType.SlashEqual); break;
 
-            case '<':
+            case '>':
                 type = OperatorAngleBrackets(TokenType.ArrowRight, TokenType.ArrowRightEqual,
           TokenType.ArrowsRight, TokenType.ArrowsRightEqual); break;
-            case '>':
+            case '<':
                 type = OperatorAngleBrackets(TokenType.ArrowLeft, TokenType.ArrowLeftEqual,
       TokenType.ArrowsLeft, TokenType.ArrowsLeftEqual); break;
 

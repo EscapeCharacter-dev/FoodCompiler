@@ -144,7 +144,7 @@ public partial class Parser
                 _index++;
                 _head += new SimpleFunctionDeclaration(
                     (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), null, faillible);
-                var funcExpr = _binder.BindExpression(ParseExpression(), type);
+                var funcExpr = Binder.BindExpression(ParseExpression(), type);
                 if (Current.Type != TokenType.Semicolon)
                     CompilationUnit.Report(new ReportedDiagnostic(
                         DiagnosticContext.Diagnostics["_missingSemicolon"],
@@ -188,7 +188,7 @@ public partial class Parser
                 ));
         _index++;
 
-        var expr = _binder.BindExpression(ParseExpression(), type);
+        var expr = Binder.BindExpression(ParseExpression(), type);
         if (!type.Kind.IsCompatibleWith(expr.BoundType.Kind))
             CompilationUnit.Report(new ReportedDiagnostic(
                 DiagnosticContext.Diagnostics["_binderInvalidType"], _lexer.GetPosition(expr.CoreTree.Token)));

@@ -49,6 +49,8 @@ public sealed class CompilationUnit
     /// </summary>
     public readonly CompilationDriver Driver;
 
+    public readonly List<IDeclaration> Declarations = new();
+
     /// <summary>
     /// Initializes a new instance of the class <see cref="CompilationUnit"/>.
     /// </summary>
@@ -69,8 +71,13 @@ public sealed class CompilationUnit
     /// </summary>
     public void Parse()
     {
-        while (!Parser.EndReached) 
-            Parser.ParseDeclaration();
+        while (!Parser.EndReached)
+        {
+            var decl = Parser.ParseDeclaration();
+            if (decl == null)
+                break;
+            Declarations.Add(decl);
+        }
     }
 
     /// <summary>
