@@ -5,6 +5,9 @@
 /// </summary>
 public static partial class TypeKindExtensions
 {
+    /// <summary>
+    /// Returns true if this type is compatible with another (direct casting).
+    /// </summary>
     public static bool IsCompatibleWith(this TypeKind left, TypeKind with)
     {
         if (left == with)
@@ -37,4 +40,23 @@ public static partial class TypeKindExtensions
         if (isFloatLeft && isFloatWith) return true;
         return false;
     }
+
+    /// <summary>
+    /// Returns true if this type is unsigned.
+    /// </summary>
+    public static bool IsUnsigned(this TypeKind left) =>
+        left == TypeKind.Byte
+     || left == TypeKind.Boolean
+     || left == TypeKind.UShort
+     || left == TypeKind.UInt
+     || left == TypeKind.ULong
+     || left == TypeKind.Pointer;
+
+    /// <summary>
+    /// Returns true if this type is a floating-point type.
+    /// </summary>
+    public static bool IsFloat(this TypeKind left) =>
+        left == TypeKind.Half
+     || left == TypeKind.Float
+     || left == TypeKind.Double;
 }

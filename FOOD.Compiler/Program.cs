@@ -23,8 +23,9 @@ public static class Program
             if (string.IsNullOrWhiteSpace(input)) break;
             var driver = new CompilationDriver("Sample");
             var unit = new CompilationUnit(driver, input, "SampleGen_x86-64");
-            var generator = new LLVMGenerator();
+            var generator = new LLVMGenerator(unit);
             var expr = unit.Parser.Binder.BindExpression(unit.Parser.ParseExpression());
+            unit.DisplayDiagnostics();
             var llvm = generator.GenerateExpression(expr);
             llvm.Dump();
             Console.WriteLine();
