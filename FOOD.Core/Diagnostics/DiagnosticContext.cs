@@ -53,7 +53,8 @@ public sealed class DiagnosticContext
 
         { "_WDuplicateUsingDirective", new Diagnostic(DiagnosticLevel.Warning2, "The namespace {0} is referenced many times") },
         { "_WUndefiningInexistentMacro", new Diagnostic(DiagnosticLevel.Warning3, "The macro {0} is already undefined") },
-        {" _WUsedDefinedPreprocessed", new Diagnostic(DiagnosticLevel.Warning1, "(User-defined) {0}") }
+        { "_WUsedDefinedPreprocessed", new Diagnostic(DiagnosticLevel.Warning1, "(User-defined) {0}") },
+        { "_WDefaultLiteralOfPointer", new Diagnostic(DiagnosticLevel.Warning2, "Getting the constant default value of a pointer") }
     };
 
     /// <summary>

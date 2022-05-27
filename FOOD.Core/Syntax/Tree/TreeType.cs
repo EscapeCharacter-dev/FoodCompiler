@@ -86,4 +86,6 @@ public enum TreeType
     New,
     ArrayLiteral,
     Lengthof,
+    Range,
+    DefaultLiteral,
 }

@@ -97,9 +97,23 @@ public partial class Parser
         }
     }
 
-    private ParseTree P1()
+    private ParseTree PDots()
     {
         var left = P0();
+        while (Current.Type == TokenType.Dot || Current.Type == TokenType.ThinArrow)
+        {
+            var op = Current;
+            var kind = Current.Type == TokenType.Dot ? TreeType.MemberAccess : TreeType.PointerMemberAccess;
+            _index++;
+            var right = PDots();
+            left = new BinaryTree(kind, op, left, right);
+        }
+        return left;
+    }
+
+    private ParseTree P1()
+    {
+        var left = PDots();
         while (Current.Type.IsPartOf(
                 TokenType.PlusPlus,
                 TokenType.MinusMinus,
@@ -161,16 +175,14 @@ public partial class Parser
         return left;
     }
 
-    private ParseTree PDots()
+    private ParseTree Range()
     {
         var left = P1();
-        while (Current.Type == TokenType.Dot || Current.Type == TokenType.ThinArrow)
+        while (Current.Type == TokenType.DotDot)
         {
-            var op = Current;
-            var kind = Current.Type == TokenType.Dot ? TreeType.MemberAccess : TreeType.PointerMemberAccess;
             _index++;
-            var right = PDots();
-            left = new BinaryTree(kind, op, left, right);
+            var right = Range();
+            left = new BinaryTree(TreeType.Range, Previous, left, right);
         }
         return left;
     }
@@ -189,18 +201,86 @@ public partial class Parser
             case TokenType.Squiggle: kind = TreeType.BitwiseNegation; break;
             case TokenType.Star: kind = TreeType.Dereference; break;
             case TokenType.Ampersand: kind = TreeType.AddressOf; break;
-            case TokenType.KeywordSizeof:
+            case TokenType.KeywordSizeof: // size sizeof(T)
                 {
                     _index++;
+                    if (Current.Type != TokenType.OpenBracket)
+                    {
+                        _index++;
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_missingOpeningBracket"],
+                            _lexer.GetPosition(Previous)
+                        ));
+                        return new StubTree(TreeType.Error, Current);
+                    }
+                    _index++;
                     var type = ParseType();
+                    if (Current.Type != TokenType.ClosedBracket)
+                    {
+                        _index++;
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                            _lexer.GetPosition(Previous)
+                        ));
+                        return new StubTree(TreeType.Error, Current);
+                    }
+                    _index++;
                     kind = TreeType.Sizeof;
                     return new UnaryTree(kind, token, new TypeTree(TreeType.Type, token, type));
                 }
-            case TokenType.KeywordLengthof:
+            case TokenType.KeywordLengthof: // size lengthof(expression::string)
                 {
                     _index++;
+                    if (Current.Type != TokenType.OpenBracket)
+                    {
+                        _index++;
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_missingOpeningBracket"],
+                            _lexer.GetPosition(Previous)
+                        ));
+                        return new StubTree(TreeType.Error, Current);
+                    }
+                    _index++;
+                    var str = P2();
+                    if (Current.Type != TokenType.ClosedBracket)
+                    {
+                        _index++;
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                            _lexer.GetPosition(Previous)
+                        ));
+                        return new StubTree(TreeType.Error, Current);
+                    }
+                    _index++;
                     kind = TreeType.Lengthof;
-                    return new UnaryTree(kind, token, PDots());
+                    return new UnaryTree(kind, token, str);
+                }
+            case TokenType.KeywordDefault:
+                {
+                    _index++;
+                    if (Current.Type != TokenType.OpenBracket)
+                    {
+                        _index++;
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_missingOpeningBracket"],
+                            _lexer.GetPosition(Previous)
+                        ));
+                        return new StubTree(TreeType.Error, Current);
+                    }
+                    _index++;
+                    var type = ParseType();
+                    if (Current.Type != TokenType.ClosedBracket)
+                    {
+                        _index++;
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                            _lexer.GetPosition(Previous)
+                        ));
+                        return new StubTree(TreeType.Error, Current);
+                    }
+                    _index++;
+                    kind = TreeType.DefaultLiteral;
+                    return new UnaryTree(kind, token, new TypeTree(TreeType.Type, token, type));
                 }
             case TokenType.OpenSquareBracket:
                 {
@@ -221,7 +301,7 @@ public partial class Parser
                     {
                         _index++;
                         CompilationUnit.Report(new ReportedDiagnostic(
-                            DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                            DiagnosticContext.Diagnostics["_missingOpeningBracket"],
                             _lexer.GetPosition(Previous)
                         ));
                         return new StubTree(TreeType.Error, Current);
@@ -313,7 +393,7 @@ public partial class Parser
                 }
         }
         if (kind == TreeType.Error)
-            return PDots();
+            return Range();
         _index++;
         var tree = P2();
         return new UnaryTree(kind, token, tree);

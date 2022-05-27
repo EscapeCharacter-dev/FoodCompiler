@@ -107,14 +107,11 @@ public partial class Parser
                 ));
         _index++;
         var ifTrue = ParseStatement();
-        if (Current.Type == TokenType.Identifier)
+        if (Current.Type == TokenType.KeywordElse)
         {
-            if (Current.Value as string == "else")
-            {
-                _index++;
-                var ifFalse = ParseStatement();
-                return new IfStatement(expr, ifTrue, ifFalse);
-            }
+            _index++;
+            var ifFalse = ParseStatement();
+            return new IfStatement(expr, ifTrue, ifFalse);
         }
         return new IfStatement(expr, ifTrue);
     }
@@ -249,8 +246,9 @@ public partial class Parser
                     ));
             gStatements.Add(ParseStatement());
         }
+        var scope = _head;
         EndScope();
         _index++;
-        return new GroupStatement(gStatements);
+        return new GroupStatement(gStatements, scope);
     }
 }

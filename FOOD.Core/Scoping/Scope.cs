@@ -1,4 +1,5 @@
 ﻿using FOOD.Core.Syntax.Structure;
+using LLVMSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -93,5 +94,27 @@ public sealed class Scope
         }
         if (Parent == null) throw new Exception("Cannot be run in root node");
         return Parent.GetClosestFunction();
+    }
+
+    /// <summary>
+    /// Changes a declaration.
+    /// </summary>
+    /// <param name="declaration"></param>
+    /// <param name="name"></param>
+    public void Mutate(IDeclaration declaration, string name)
+    {
+        var i = 0;
+        foreach (var decl in Declarations)
+        {
+            if (decl.Name == name)
+            {
+                Declarations[i] = declaration;
+                return;
+            }
+            i++;
+        }
+        if (Parent == null) throw new Exception("Can't mutate");
+        Parent.Mutate(declaration, name);
+        return;
     }
 }

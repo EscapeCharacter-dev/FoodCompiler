@@ -310,8 +310,34 @@ public class Lexer : CompilationPart
         if (char.IsDigit(Current))
         {
             var currentIndex = _index;
-            while (char.IsDigit(Current) || Current == '.') _index++;
+            _index++;
+            var style = NumberStyles.Number;
+            if (char.ToLower(Current) == 'x')
+            {
+                _index++;
+                currentIndex = _index;
+                style = NumberStyles.HexNumber;
+                while (char.IsDigit(Current) || char.ToLower(Current) >= 'a' && char.ToLower(Current) <= 'f')
+                    _index++;
+            }
+            else if (char.ToLower(Current) == 'b')
+            {
+                _index++;
+                var binaryResult = 0UL;
+                while (Current == '0' || Current == '1')
+                {
+                    binaryResult <<= 1;
+                    binaryResult |= (byte)(Current - '0');
+                    _index++;
+                }
+                return new Token(_index, TokenType.LiteralNumber, binaryResult);
+            }
+            else while (char.IsDigit(Current) || Current == '.') _index++;
             var subs = _source[currentIndex.._index];
+            if (long.TryParse(subs, style, CultureInfo.InvariantCulture, out var lResult))
+                return new Token(_index, TokenType.LiteralNumber, (decimal)lResult);
+            if (ulong.TryParse(subs, style, CultureInfo.InvariantCulture, out var ulResult))
+                return new Token(_index, TokenType.LiteralNumber, (decimal)ulResult);
             if (!decimal.TryParse(subs, NumberStyles.Number, CultureInfo.InvariantCulture, out var dResult))
             {
                 var tok = new Token(_index, TokenType.Error, null);
@@ -320,10 +346,6 @@ public class Lexer : CompilationPart
                     GetPosition(tok), subs));
                 return tok;
             }
-            if (long.TryParse(subs, NumberStyles.Number, CultureInfo.InvariantCulture, out var lResult))
-                return new Token(_index, TokenType.LiteralNumber, (decimal)lResult);
-            if (ulong.TryParse(subs, NumberStyles.Number, CultureInfo.InvariantCulture, out var ulResult))
-                return new Token(_index, TokenType.LiteralNumber, (decimal)ulResult);
             return new Token(_index, TokenType.LiteralNumber, dResult, true);
         }
 

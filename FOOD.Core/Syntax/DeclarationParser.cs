@@ -17,7 +17,7 @@ public partial class Parser
 {
     public IDeclaration? ParseDeclaration(bool simple = false)
     {
-        if (!simple && TryParseDirective()) return null;
+        if (!simple && TryParseDirective()) return new NullDeclaration();
         var attributeList = new List<string>();
         if (Current.Type == TokenType.OpenSquareBracket)
         {
@@ -143,7 +143,8 @@ public partial class Parser
             {
                 _index++;
                 _head += new SimpleFunctionDeclaration(
-                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), null, faillible);
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(),
+                    attributeList.ToArray(), null, faillible, Head);
                 var funcExpr = Binder.BindExpression(ParseExpression(), type);
                 if (Current.Type != TokenType.Semicolon)
                     CompilationUnit.Report(new ReportedDiagnostic(
@@ -153,7 +154,7 @@ public partial class Parser
                 decl = new SimpleFunctionDeclaration(
                     (string)ident.Value!, type, Location.Static,
                     isPublic, parameters.ToImmutableList(), attributeList.ToArray(),
-                    funcExpr, faillible);
+                    funcExpr, faillible, Head);
                 _index++;
                 EndScope();
                 
@@ -163,12 +164,14 @@ public partial class Parser
             else if (Current.Type == TokenType.OpenCurlyBracket)
             {
                 _head += new ImperativeFunctionDeclaration(
-                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), null, faillible);
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(),
+                    attributeList.ToArray(), null, faillible, Head);
                 _head += new VariableDeclaration("yield", type, Location.Local, false, null, Array.Empty<string>());
                 var stat = ParseStatement();
                 EndScope();
                 decl = new ImperativeFunctionDeclaration(
-                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(), attributeList.ToArray(), stat, faillible);
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(),
+                    attributeList.ToArray(), stat, faillible, Head);
                 _head += decl;
                 return decl;
             }

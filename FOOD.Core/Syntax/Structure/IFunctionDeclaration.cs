@@ -1,4 +1,5 @@
-﻿using FOOD.Core.Syntax.Type;
+﻿using FOOD.Core.Scoping;
+using FOOD.Core.Syntax.Type;
 using System.Collections.Immutable;
 
 namespace FOOD.Core.Syntax.Structure;
@@ -17,4 +18,9 @@ public interface IFunctionDeclaration : IDeclaration
     /// Whether the function can fail
     /// </summary>
     public bool Faillible { get; }
+
+    /// <summary>
+    /// The scope for the body of the function.
+    /// </summary>
+    public Scope Scope { get; }
 }

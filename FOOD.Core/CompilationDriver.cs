@@ -24,20 +24,11 @@ public sealed class CompilationDriver
 
     public void Parse()
     {
-#if DEBUG
         foreach (var unit in _units)
         {
             unit.Parse();
             Module.Objects.Add(unit.ModuleObject);
         }
-#else
-        Parallel.ForEach(_units, unit => unit.Parse());
-        _units.ForEach(unit =>
-        {
-            Module.Objects.Add(unit.ModuleObject);
-            unit.DisplayDiagnostics();
-        });
-#endif
     }
 
     public void DisplayDiagnostics()

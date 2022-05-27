@@ -1,5 +1,6 @@
 ﻿using FOOD.Core.Syntax.Tree;
 using FOOD.Core.Syntax.Type;
+using LLVMSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,4 +38,9 @@ public interface IDeclaration
     /// The list of attributes that this declaration is affected by.
     /// </summary>
     public string[] Attributes { get; }
+
+    /// <summary>
+    /// Used when generating code.
+    /// </summary>
+    public LLVMValueRef ValueRef { get; set; }
 }

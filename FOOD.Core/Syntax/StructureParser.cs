@@ -181,7 +181,10 @@ public partial class Parser
                     }
                 }
                 if (Current.Type == TokenType.ClosedCurlyBracket)
+                {
+                    members.Add((name, enumIndex++));
                     break;
+                }
                 if (Current.Type != TokenType.Comma && Current.Type != TokenType.ClosedCurlyBracket)
                 {
                     CompilationUnit.Report(new ReportedDiagnostic(

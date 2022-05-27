@@ -1,10 +1,12 @@
-﻿using FOOD.Core.Syntax.Binding;
+﻿using FOOD.Core.Scoping;
+using FOOD.Core.Syntax.Binding;
 using FOOD.Core.Syntax.Type;
+using LLVMSharp;
 using System.Collections.Immutable;
 
 namespace FOOD.Core.Syntax.Structure;
 
-public readonly struct SimpleFunctionDeclaration : IFunctionDeclaration
+public struct SimpleFunctionDeclaration : IFunctionDeclaration
 {
     public readonly BoundTree? Body;
 
@@ -25,7 +27,8 @@ public readonly struct SimpleFunctionDeclaration : IFunctionDeclaration
         ImmutableList<VariableDeclaration> parameters,
         string[] attributes,
         BoundTree? body,
-        bool faillible)
+        bool faillible,
+        Scope scope)
     {
         Name = name;
         Type = type;
@@ -35,6 +38,8 @@ public readonly struct SimpleFunctionDeclaration : IFunctionDeclaration
         Attributes = attributes;
         Faillible = faillible;
         Body = body;
+        Scope = scope;
+        ValueRef = default(LLVMValueRef);
     }
 
     public ImmutableList<VariableDeclaration> Parameters { get; }
@@ -50,4 +55,10 @@ public readonly struct SimpleFunctionDeclaration : IFunctionDeclaration
     public bool Faillible { get; }
 
     public string[] Attributes { get; }
+
+    public Scope Scope { get; }
+
+    public LLVMValueRef ValueRef { get; set; }
+
+    public override string ToString() => $"[{Type}]{Name}:\n" + Body;
 }

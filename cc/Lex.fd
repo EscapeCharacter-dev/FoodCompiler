@@ -1,0 +1,287 @@
+namespace Syntax;
+
+public const uint EOF = 0;
+public const uint ERR = 0xFF;
+char[256] LexKeywordBuffer; // C string
+char[262144] ValueBuf; // TODO: replace by Food::RawMalloc()
+size ValueBufOffset = 0;
+
+// TODO: Implement in standard library
+void CopyRegion(char *source, char *destination, size sourceOffset, size count)
+{
+	char *totalSource = source + (char *)sourceOffset;
+	for (int i = 0; i < count; i++)
+		destination[i] = totalSource[i];
+}
+
+[parallel]
+size Strlen(char *cstring, size maxCStringLength)
+{
+	const char *cstringBase = cstring;
+	while (*cstring++ != '\0' && (size)(cstring - cstringBase) <= maxCStringLength) ;
+	return (size)(cstring - cstringBase);
+}
+
+[parallel]
+bool StrCmpPCString(char *cstring, string pascalString, size maxCStringLength)
+{
+	const size length = lengthof(pascalString);
+	if (Strlen(cstring, maxCStringLength) != length)
+		return false;
+	for (int i = 0; i < length; i++) {
+		if (cstring[i] != pascalString[i])
+			return false;
+	}
+	return true;
+}
+
+public struct LexMachine
+{
+	const string 	&Input; // The input of the lexer
+	ulong 			Position; // The position of the lexer in the string
+}
+
+// Represents the different values a token can hold
+public union LexValue
+{
+	u8		AsU8;
+	u16		AsU16;
+	u32		AsU32;
+	u64		AsU64;
+	void	*AsPointer;
+	string	*AsString;
+}
+
+public record LexToken
+{
+	uint			Kind; // The kind of the token
+	ulong 			Position; // The position of the token in the file
+	LexValue		Value; // The value of the token
+}
+
+public enum LexKeywords
+{
+	NotAKeyword = 0x1000, Atomic,
+	Break, Bool, Byte,
+	Case, Const, Continue,
+	Default, Do, Double,
+	Else, Enum, Extern,
+	Float, For, Function,
+	Goto, Half, If,
+	Int, Long, Namespace,
+	New, Null, Public,
+	Record, Restrict, Return,
+	SByte, Short, Size,
+	Sizeof, Static, Struct,
+	Switch, Union, UInt,
+	Using, ULong, UShort,
+	Void, Volatile, While,
+	True, False, Start,
+	End, Class, String,
+	Lengthof
+}
+
+LexKeywords GetKeyword()
+{
+	if (StrCmpPCString(LexKeywordBuffer, "atomic", 256)) yield = LexKeywords.Atomic;
+	else if (StrCmpPCString(LexKeywordBuffer, "break", 256)) yield = LexKeywords.Break;
+	else if (StrCmpPCString(LexKeywordBuffer, "bool", 256)) yield = LexKeywords.Bool;
+	else if (StrCmpPCString(LexKeywordBuffer, "byte", 256)) yield = LexKeywords.Byte;
+	else if (StrCmpPCString(LexKeywordBuffer, "case", 256)) yield = LexKeywords.Case;
+	else if (StrCmpPCString(LexKeywordBuffer, "char", 256)) yield = LexKeywords.SByte;
+	else if (StrCmpPCString(LexKeywordBuffer, "const", 256)) yield = LexKeywords.Const;
+	else if (StrCmpPCString(LexKeywordBuffer, "continue", 256)) yield = LexKeywords.Continue;
+	else if (StrCmpPCString(LexKeywordBuffer, "default", 256)) yield = LexKeywords.Default;
+	else if (StrCmpPCString(LexKeywordBuffer, "do", 256)) yield = LexKeywords.Do;
+	else if (StrCmpPCString(LexKeywordBuffer, "double", 256)) yield = LexKeywords.Double;
+	else if (StrCmpPCString(LexKeywordBuffer, "else", 256)) yield = LexKeywords.Else;
+	else if (StrCmpPCString(LexKeywordBuffer, "enum", 256)) yield = LexKeywords.Enum;
+	else if (StrCmpPCString(LexKeywordBuffer, "extern", 256)) yield = LexKeywords.Extern;
+	else if (StrCmpPCString(LexKeywordBuffer, "float", 256)) yield = LexKeywords.Float;
+	else if (StrCmpPCString(LexKeywordBuffer, "for", 256)) yield = LexKeywords.For;
+	else if (StrCmpPCString(LexKeywordBuffer, "function", 256)) yield = LexKeywords.Function;
+	else if (StrCmpPCString(LexKeywordBuffer, "goto", 256)) yield = LexKeywords.Goto;
+	else if (StrCmpPCString(LexKeywordBuffer, "half", 256)) yield = LexKeywords.Half;
+	else if (StrCmpPCString(LexKeywordBuffer, "if", 256)) yield = LexKeywords.If;
+	else if (StrCmpPCString(LexKeywordBuffer, "int", 256)) yield = LexKeywords.Int;
+	else if (StrCmpPCString(LexKeywordBuffer, "long", 256)) yield = LexKeywords.Long;
+	else if (StrCmpPCString(LexKeywordBuffer, "namespace", 256)) yield = LexKeywords.Namespace;
+	else if (StrCmpPCString(LexKeywordBuffer, "new", 256)) yield = LexKeywords.New;
+	else if (StrCmpPCString(LexKeywordBuffer, "null", 256)) yield = LexKeywords.Null;
+	else if (StrCmpPCString(LexKeywordBuffer, "public", 256)) yield = LexKeywords.Public;
+	else if (StrCmpPCString(LexKeywordBuffer, "record", 256)) yield = LexKeywords.Record;
+	else if (StrCmpPCString(LexKeywordBuffer, "restrict", 256)) yield = LexKeywords.Restrict;
+	else if (StrCmpPCString(LexKeywordBuffer, "return", 256)) yield = LexKeywords.Return;
+	else if (StrCmpPCString(LexKeywordBuffer, "sbyte", 256)) yield = LexKeywords.SByte;
+	else if (StrCmpPCString(LexKeywordBuffer, "short", 256)) yield = LexKeywords.Short;
+	else if (StrCmpPCString(LexKeywordBuffer, "size", 256)) yield = LexKeywords.Size;
+	else if (StrCmpPCString(LexKeywordBuffer, "sizeof", 256)) yield = LexKeywords.Sizeof;
+	else if (StrCmpPCString(LexKeywordBuffer, "static", 256)) yield = LexKeywords.Static;
+	else if (StrCmpPCString(LexKeywordBuffer, "struct", 256)) yield = LexKeywords.Struct;
+	else if (StrCmpPCString(LexKeywordBuffer, "switch", 256)) yield = LexKeywords.Switch;
+	else if (StrCmpPCString(LexKeywordBuffer, "uchar", 256)) yield = LexKeywords.Byte;
+	else if (StrCmpPCString(LexKeywordBuffer, "union", 256)) yield = LexKeywords.Union;
+	else if (StrCmpPCString(LexKeywordBuffer, "uint", 256)) yield = LexKeywords.UInt;
+	else if (StrCmpPCString(LexKeywordBuffer, "ulong", 256)) yield = LexKeywords.ULong;
+	else if (StrCmpPCString(LexKeywordBuffer, "ushort", 256)) yield = LexKeywords.UShort;
+	else if (StrCmpPCString(LexKeywordBuffer, "using", 256)) yield = LexKeywords.Using;
+	else if (StrCmpPCString(LexKeywordBuffer, "void", 256)) yield = LexKeywords.Void;
+	else if (StrCmpPCString(LexKeywordBuffer, "volatile", 256)) yield = LexKeywords.Volatile;
+	else if (StrCmpPCString(LexKeywordBuffer, "while", 256)) yield = LexKeywords.While;
+	else if (StrCmpPCString(LexKeywordBuffer, "true", 256)) yield = LexKeywords.True;
+	else if (StrCmpPCString(LexKeywordBuffer, "false", 256)) yield = LexKeywords.False;
+	else if (StrCmpPCString(LexKeywordBuffer, "start", 256)) yield = LexKeywords.Start;
+	else if (StrCmpPCString(LexKeywordBuffer, "end", 256)) yield = LexKeywords.End;
+	else if (StrCmpPCString(LexKeywordBuffer, "class", 256)) yield = LexKeywords.Class;
+	else if (StrCmpPCString(LexKeywordBuffer, "string", 256)) yield = LexKeywords.String;
+	else if (StrCmpPCString(LexKeywordBuffer, "lengthof", 256)) yield = LexKeywords.Lengthof;
+
+	else yield = LexKeywords.NotAKeyword;
+	return;
+}
+
+[pure]
+public bool IsSpace(char character):
+	character == ' '
+	|| character == '\t'
+	|| character == '\n'
+	|| character == '\r'
+	|| character == '\v'
+	? true : false;
+
+public void SkipSpaces(LexMachine &lexer)
+{
+	while (lexer->Position < lengthof(*lexer->Input)
+		&& IsSpace((*lexer->Input)[lexer->Position]))
+		lexer->Position++;
+}
+
+[parallel]
+public void LexFetch(LexMachine &lexer, LexToken &dest)
+{
+	const string &input = lexer->Input;
+	if (lexer->Position >= lengthof(*lexer->Input)) {
+		*dest = new LexToken(EOF, lexer->Position);
+		return;
+	}
+	SkipSpaces(lexer);
+
+	char current = (*input)[lexer->Position];
+	ulong pos = lexer->Position;
+	switch (current) {
+	start:
+		lexer->Position++;
+
+		case ';':
+		case '?':
+		case ',':
+		case '(':
+		case ')':
+		case '[':
+		case ']':
+		case '{':
+		case '}':
+			// to prevent fallback
+			*dest = new LexToken(current, pos);
+			return;
+		case '+':
+		case '&':
+		case '|':
+			if ((*input)[lexer->Position] == current) {
+				lexer->Position++;
+				*dest = new LexToken(current << 8 | current, pos);
+				return;
+			} else if ((*input)[lexer->Position] == '=') {
+				lexer->Position++;
+				*dest = new LexToken(current << 8 | '=', pos);
+				return;
+			}
+		case '%':
+		case '*':
+		case '/':
+		case '!':
+			if ((*input)[lexer->Position] == '=') {
+				lexer->Position++;
+				*dest = new LexToken(current << 8 | '=', pos);
+				return;
+			}
+		case ':':
+			if ((*input)[lexer->Position] == current) {
+				lexer->Position++;
+				*dest = new LexToken(current << 8 | current, pos);
+				return;
+			}
+		case '.':
+			if ((*input)[lexer->Position] == current) {
+				lexer->Position++;
+				if ((*input)[lexer->Position] == current) {
+					lexer->Position++;
+					*dest = new LexToken(current << 16 | current << 8 | current, pos);
+					return;
+				}
+				*dest = new LexToken(current << 8 | current, pos);
+				return;
+			}
+		case '-':
+		case '=':
+			if ((*input)[lexer->Position] == '=') {
+				lexer->Position++;
+				*dest = new LexToken(current << 8 | '=', pos);
+				return;
+			} else if ((*input)[lexer->Position] == '>') {
+				lexer->Position++;
+				*dest = new LexToken(current << 8 | '>', pos);
+				return;
+			}
+		case '<':
+		case '>':
+			if ((*input)[lexer->Position] == current) {
+				lexer->Position++;
+				if ((*input)[lexer->Position] == '=') {
+					lexer->Position++;
+					*dest = new LexToken(current << 16 | current << 8 | current, pos);
+					return;
+				}
+				*dest = new LexToken(current << 8 | current, pos);
+				return;
+			} else if ((*input)[lexer->Position] == '=') {
+				lexer->Position++;
+				*dest = new LexToken(current << 8 | '=', pos);
+				return;
+			}
+		case 'a'..'z':
+		case 'A'..'Z': {
+			const size base = lexer->Position - 1;
+			while (lexer->Position < lengthof(*lexer->Input) &&(
+				(*input)[lexer->Position] >= 'a' && (*input)[lexer->Position] <= 'z'
+				|| (*input)[lexer->Position] >= 'A' && (*input)[lexer->Position] <= 'Z'
+				|| (*input)[lexer->Position] >= '0' && (*input)[lexer->Position] <= '9'
+				|| (*input)[lexer->Position] == '_')) {
+				
+				lexer->Position++;
+			}
+			const size count = lexer->Position - base;
+			CopyRegion(lexer->Input, LexKeywordBuffer, base, count <= 255 ? count : 255);
+			LexKeywordBuffer[255] = '\0';
+			LexKeywords keyword = GetKeyword();
+			if (keyword == LexKeywords.NotAKeyword) {
+				*dest = new LexToken(keyword, pos);
+			} else {
+				*dest = new LexToken(keyword, pos);
+				return;
+			}
+		}
+		case '0'..'9': {
+			const size base = lexer->Position - 1;
+			lexer->Position++;
+			if ((*input)[lexer->Position] == 'x'
+			 || (*input)[lexer->Position] == 'X') {
+				
+			}
+		}
+
+	end:
+		*dest = new LexToken(current, pos);
+		return;
+	}
+}

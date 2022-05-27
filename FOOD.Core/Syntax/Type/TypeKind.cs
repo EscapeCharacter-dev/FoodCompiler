@@ -111,4 +111,5 @@ public enum TypeKind
     /// </summary>
     Struct,
     String,
+    Range,
 }

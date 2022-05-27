@@ -1,5 +1,6 @@
 ﻿using FOOD.Core.Scoping;
 using FOOD.Core.Syntax.Type;
+using LLVMSharp;
 
 namespace FOOD.Core.Syntax.Structure;
 
@@ -55,4 +56,6 @@ public readonly struct StructureDeclaration : IDeclaration
         }
         return null;
     }
+
+    public LLVMValueRef ValueRef { get => default(LLVMValueRef); set => new Void(); }
 }

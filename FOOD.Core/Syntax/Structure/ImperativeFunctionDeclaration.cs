@@ -1,10 +1,12 @@
-﻿using FOOD.Core.Syntax.Statements;
+﻿using FOOD.Core.Scoping;
+using FOOD.Core.Syntax.Statements;
 using FOOD.Core.Syntax.Type;
+using LLVMSharp;
 using System.Collections.Immutable;
 
 namespace FOOD.Core.Syntax.Structure;
 
-public readonly struct ImperativeFunctionDeclaration : IFunctionDeclaration
+public struct ImperativeFunctionDeclaration : IFunctionDeclaration
 {
     public readonly Statement? Body;
 
@@ -25,7 +27,8 @@ public readonly struct ImperativeFunctionDeclaration : IFunctionDeclaration
         ImmutableList<VariableDeclaration> parameters,
         string[] attributes,
         Statement? body,
-        bool isFaillible)
+        bool isFaillible,
+        Scope scope)
     {
         Name = name;
         Type = type;
@@ -35,6 +38,8 @@ public readonly struct ImperativeFunctionDeclaration : IFunctionDeclaration
         Attributes = attributes;
         Faillible = isFaillible;
         Body = body;
+        Scope = scope;
+        ValueRef = default(LLVMValueRef);
     }
     public ImmutableList<VariableDeclaration> Parameters { get; }
 
@@ -49,4 +54,10 @@ public readonly struct ImperativeFunctionDeclaration : IFunctionDeclaration
     public bool Faillible { get; }
 
     public string[] Attributes { get; }
+
+    public Scope Scope { get; }
+
+    public LLVMValueRef ValueRef { get; set; }
+
+    public override string ToString() => $"[{Type}]{Name}:\n" + Body;
 }

@@ -58,4 +58,16 @@ public abstract class ParseTree
     }
 
     public override string ToString() => Print();
+
+    /// <summary>
+    /// Returns true if this expression contains only literals and no identifiers/func. calls, etc.
+    /// </summary>
+    /// <returns></returns>
+    public bool IsConstant()
+    {
+        foreach (var children in ChildrenEnumerator)
+            if (!children.IsConstant()) return false;
+        if (TreeType != TreeType.Literal || Token.Type != TokenType.LiteralNumber) return false;
+        return true;
+    }
 }
