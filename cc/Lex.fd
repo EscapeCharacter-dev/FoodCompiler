@@ -14,6 +14,8 @@ void CopyRegion(char *source, char *destination, size sourceOffset, size count)
 		destination[i] = totalSource[i];
 }
 
+void CopyRegionRoot(char *source, char *destination, size count) = CopyRegion(source, destination, 0, count);
+
 [parallel]
 size Strlen(char *cstring, size maxCStringLength)
 {
@@ -162,7 +164,6 @@ public void SkipSpaces(LexMachine &lexer)
 		lexer->Position++;
 }
 
-[parallel]
 public void LexFetch(LexMachine &lexer, LexToken &dest)
 {
 	const string &input = lexer->Input;

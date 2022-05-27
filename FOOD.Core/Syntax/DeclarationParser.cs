@@ -196,6 +196,35 @@ public partial class Parser
                 _head += decl;
                 return decl;
             }
+            else if (Current.Type == TokenType.Equal)
+            {
+                _index++;
+                var funcExpr = Binder.BindExpression(ParseExpression(), type);
+                EndScope();
+                if (Current.Type != TokenType.Semicolon)
+                    CompilationUnit.Report(new ReportedDiagnostic(
+                        DiagnosticContext.Diagnostics["_missingSemicolon"],
+                        _lexer.GetPosition(Previous)
+                        ));
+                if (funcExpr.CoreTree.TreeType != TreeType.FunctionCall)
+                {
+                    CompilationUnit.Report(new ReportedDiagnostic(
+                        DiagnosticContext.Diagnostics["_canOnlyAliasFunction"],
+                        _lexer.GetPosition(Previous)
+                        ));
+                }
+                decl = new AliasFunctionDeclaration(
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(),
+                    attributeList.ToArray(), funcExpr, faillible);
+                if (Current.Type != TokenType.Semicolon)
+                    CompilationUnit.Report(new ReportedDiagnostic(
+                        DiagnosticContext.Diagnostics["_missingSemicolon"],
+                        _lexer.GetPosition(Previous)
+                        ));
+                _index++;
+                _head += decl;
+                return decl;
+            }
         }
         else if (isExtern)
         {
