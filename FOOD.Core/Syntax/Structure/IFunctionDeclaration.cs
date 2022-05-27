@@ -1,5 +1,4 @@
 ﻿using FOOD.Core.Scoping;
-using FOOD.Core.Syntax.Type;
 using System.Collections.Immutable;
 
 namespace FOOD.Core.Syntax.Structure;

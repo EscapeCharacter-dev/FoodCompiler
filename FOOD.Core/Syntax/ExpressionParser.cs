@@ -145,8 +145,7 @@ public partial class Parser
                 case TokenType.OpenBracket:
                     {
                         _index++;
-                        var children = new List<ParseTree>(4);
-                        children.Add(left);
+                        var children = new List<ParseTree>(4) { left };
                         while (Current.Type != TokenType.ClosedBracket)
                         {
                             children.Add(P15());
@@ -307,8 +306,7 @@ public partial class Parser
                         return new StubTree(TreeType.Error, Current);
                     }
                     _index++;
-                    var values = new List<ParseTree>(4);
-                    values.Add(new TypeTree(TreeType.Type, token, type));
+                    var values = new List<ParseTree>(4) { new TypeTree(TreeType.Type, token, type) };
                     while (Current.Type != TokenType.ClosedBracket)
                     {
                         values.Add(P15());

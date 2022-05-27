@@ -1,6 +1,8 @@
 ﻿using FOOD.Core.Diagnostics;
+using FOOD.Core.Syntax.Binding;
 using FOOD.Core.Syntax.Lex;
 using FOOD.Core.Syntax.Structure;
+using FOOD.Core.Syntax.Tree;
 using FOOD.Core.Syntax.Type;
 using System;
 using System.Collections.Generic;
@@ -54,12 +56,13 @@ public partial class Parser
             StartScope();
             // structure signature only
             _head += new StructureDeclaration(
-                ident, new ParseType(0, TypeKind.Struct), Location.Static, isPublic, Array.Empty<IDeclaration>(), kind, Head, attributes);
-            while (true)
+                ident, new ParseType(0, TypeKind.Struct), Location.Static,
+                isPublic, Array.Empty<IDeclaration>(), kind, Head, attributes,
+                new(), null);
+            BoundTree[]? defaultStaticInstance = null;
+            var dictionary = new Dictionary<string, BoundTree[]>();
+            while (Current.Type != TokenType.ClosedCurlyBracket && Current.Type != TokenType.KeywordStatic)
             {
-                if (Current.Type == TokenType.ClosedCurlyBracket)
-                    break;
-
                 var memberDecl = ParseDeclaration(true);
                 if (memberDecl == null)
                 {
@@ -96,11 +99,180 @@ public partial class Parser
                 _index++;
                 members.Add(memberDecl);
             }
+            if (Current.Type == TokenType.KeywordStatic)
+            {
+                _index++;
+                if (Current.Type != TokenType.Colon)
+                {
+                    CompilationUnit.Report(new ReportedDiagnostic(
+                        DiagnosticContext.Diagnostics["_missingColon"],
+                        _lexer.GetPosition(Previous)
+                        ));
+                    _index++;
+                    return null;
+                }
+                _index++;
+                while (Current.Type != TokenType.ClosedCurlyBracket)
+                {
+                    var baseToken = Current;
+                    if (Current.Type == TokenType.KeywordDefault)
+                    {
+                        _index++;
+                        if (defaultStaticInstance != null)
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_symbolAlreadyDefined"],
+                                _lexer.GetPosition(Previous)
+                                ));
+                            _index++;
+                            return null;
+                        }
+                        if (Current.Type == TokenType.Identifier)
+                        {
+                            var source = (string)Current.Value!;
+                            _index++;
+                            if (!dictionary.ContainsKey(source))
+                            {
+                                CompilationUnit.Report(new ReportedDiagnostic(
+                                    DiagnosticContext.Diagnostics["_missingSymbol"],
+                                    _lexer.GetPosition(Previous), $"{ident}::{source}"
+                                    ));
+                                return null;
+                            }
+                            defaultStaticInstance = dictionary[source];
+                            goto defaultAlias;
+                        }
+                        if (Current.Type != TokenType.OpenBracket)
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_missingOpenBracket"],
+                                _lexer.GetPosition(Previous)
+                                ));
+                            return null;
+                        }
+                        _index++;
+                        var children = new List<ParseTree>(4);
+                        while (Current.Type != TokenType.ClosedBracket)
+                        {
+                            children.Add(P15());
+                            if (Current.Type != TokenType.Comma)
+                            {
+                                if (Current.Type != TokenType.ClosedBracket)
+                                {
+                                    _index++;
+                                    CompilationUnit.Report(new ReportedDiagnostic(
+                                        DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                                        _lexer.GetPosition(Previous)
+                                    ));
+                                    _index++;
+                                    return null;
+                                }
+                                break;
+                            }
+                            _index++;
+                        }
+                        _index++;
+
+                        if (children.Count != members.Count)
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_invalidFunctionSignature"], _lexer.GetPosition(baseToken),
+                                $"_ctor({ident})"));
+                        }
+                        var boundChildren = new List<BoundTree>(children.Count);
+                        var index = 0;
+                        foreach (var child in children)
+                            boundChildren.Add(Binder.BindExpression(child, members[index++].Type));
+                        defaultStaticInstance = boundChildren.ToArray();
+                    }
+                    else if (Current.Type == TokenType.Identifier)
+                    {
+                        var name = (string)Current.Value!;
+                        _index++;
+                        if (dictionary.ContainsKey(name))
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_symbolAlreadyDefined"],
+                                _lexer.GetPosition(Previous)
+                                ));
+                            _index++;
+                            return null;
+                        }
+                        var children = new List<ParseTree>(4);
+                        if (Current.Type != TokenType.OpenBracket)
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_missingOpenBracket"],
+                                _lexer.GetPosition(Previous)
+                                ));
+                            return null;
+                        }
+                        _index++;
+                        while (Current.Type != TokenType.ClosedBracket)
+                        {
+                            children.Add(P15());
+                            if (Current.Type != TokenType.Comma)
+                            {
+                                if (Current.Type != TokenType.ClosedBracket)
+                                {
+                                    _index++;
+                                    CompilationUnit.Report(new ReportedDiagnostic(
+                                        DiagnosticContext.Diagnostics["_missingClosingBracket"],
+                                        _lexer.GetPosition(Previous)
+                                    ));
+                                    _index++;
+                                    return null;
+                                }
+                                break;
+                            }
+                            _index++;
+                        }
+                        _index++;
+
+                        if (children.Count != members.Count)
+                        {
+                            CompilationUnit.Report(new ReportedDiagnostic(
+                                DiagnosticContext.Diagnostics["_invalidFunctionSignature"], _lexer.GetPosition(baseToken),
+                                $"_ctor({ident})"));
+                            return null;
+                        }
+                        var boundChildren = new List<BoundTree>(children.Count);
+                        var index = 0;
+                        foreach (var child in children)
+                        {
+                            var bound = Binder.BindExpression(child, members[index++].Type);
+                            if (bound.BoundType.Kind == TypeKind.Error)
+                            {
+                                CompilationUnit.Report(new ReportedDiagnostic(
+                                    DiagnosticContext.Diagnostics["_invalidFunctionSignature"], _lexer.GetPosition(baseToken),
+                                    $"_ctor({ident})"));
+                                return null;
+                            }
+                            boundChildren.Add(bound);
+                        }
+                        dictionary[name] = boundChildren.ToArray();
+                    }
+                defaultAlias:
+
+                    if (Current.Type != TokenType.Semicolon)
+                    {
+                        CompilationUnit.Report(new ReportedDiagnostic(
+                            DiagnosticContext.Diagnostics["_missingSemicolon"],
+                            _lexer.GetPosition(Previous)
+                            ));
+                        _index++;
+                        return null;
+                    }
+                    _index++;
+                }
+            }
             var past = Head;
             EndScope();
             _index++;
             var decl = new StructureDeclaration(
-                ident, new ParseType(0, TypeKind.Struct, null, ident), Location.Static, isPublic, members.ToArray(), kind, past, attributes);
+                ident, new ParseType(0, TypeKind.Struct, null, ident),
+                Location.Static, isPublic, members.ToArray(), kind,
+                past, attributes, dictionary, defaultStaticInstance);
             _head += decl;
             return decl;
         }

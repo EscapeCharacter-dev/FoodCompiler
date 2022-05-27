@@ -146,7 +146,7 @@ public sealed class Binder : CompilationPart
                         return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
                     }
 
-                    var bParamList = new List<BoundTree>();
+                    var bParamList = new List<BoundTree>(tree.ChildrenEnumerator.Count());
                     for (var i = 1; i < tree.ChildrenEnumerator.Count(); i++)
                         bParamList.Add(
                             BindExpression(tree.ChildrenEnumerator.ElementAt(i), decl.Members.ElementAt(i - 1).Type));
@@ -616,7 +616,8 @@ public sealed class Binder : CompilationPart
                             DiagnosticContext.Diagnostics["_cannotModifyConstantValue"], _lexer.GetPosition(tree.Token)));
                         return new BoundTree(tree, new ParseType(0, TypeKind.Error), Enumerable.Empty<BoundTree>());
                     }
-                mutableRef: return new BoundTree(tree, left.BoundType, new[] { left, right });
+                mutableRef:
+                    return new BoundTree(tree, left.BoundType, new[] { left, right });
                 }
             case TreeType.BitwiseAndAssign:
             case TreeType.BitwiseExclusiveOrAssign:

@@ -62,10 +62,21 @@ public partial class Parser
             _index++;
         }
         var isPublic = false;
-        if (Head.Parent == null && Current.Type == TokenType.KeywordPublic)
+        var isExtern = false;
+        while (Head.Parent == null
+            && (Current.Type == TokenType.KeywordPublic
+            || Current.Type == TokenType.KeywordExtern))
         {
-            isPublic = true;
-            _index++;
+            if (Current.Type == TokenType.KeywordPublic)
+            {
+                isPublic = true;
+                _index++;
+            }
+            else
+            {
+                isExtern = true;
+                _index++;
+            }
         }
 
         var structAttempt = TryParseStructure(isPublic, attributeList.ToArray());
@@ -139,6 +150,16 @@ public partial class Parser
                     ));
             }
             _index++;
+            if (isExtern)
+            {
+                _index++;
+                EndScope();
+                decl = new ExternFunctionDeclaration(
+                    (string)ident.Value!, type, Location.Static, isPublic, parameters.ToImmutableList(),
+                    attributeList.ToArray(), faillible, Head);
+                _head += decl;
+                return decl;
+            }
             if (Current.Type == TokenType.Colon)
             {
                 _index++;
@@ -175,6 +196,16 @@ public partial class Parser
                 _head += decl;
                 return decl;
             }
+        }
+        else if (isExtern)
+        {
+            _index++;
+            EndScope();
+            decl = new ExternVariableDeclaration(
+                (string)ident.Value!, type, Location.Static, isPublic,
+                attributeList.ToArray());
+            _head += decl;
+            return decl;
         }
         else if (faillible)
         {

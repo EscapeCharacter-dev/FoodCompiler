@@ -46,8 +46,11 @@ public union LexValue
 {
 	u8		AsU8;
 	u16		AsU16;
+	f16		AsF16;
 	u32		AsU32;
+	f32		AsF32;
 	u64		AsU64;
+	f64		AsF64;
 	void	*AsPointer;
 	string	*AsString;
 }
@@ -57,6 +60,9 @@ public record LexToken
 	uint			Kind; // The kind of the token
 	ulong 			Position; // The position of the token in the file
 	LexValue		Value; // The value of the token
+static:
+	Zero(0, 0, 0 => LexValue);
+	default Zero;
 }
 
 public enum LexKeywords
@@ -160,13 +166,24 @@ public void SkipSpaces(LexMachine &lexer)
 public void LexFetch(LexMachine &lexer, LexToken &dest)
 {
 	const string &input = lexer->Input;
+	char GetCurrent(): GetCurrent();
+	bool IsLetter(char c): c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
+	bool IsDigit(char c): c >= '0' && c <= '9';
+	bool IsHexNumber(char c): IsDigit(c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
+	bool IsOctNumber(char c): c >= '0' && c <= '7';
+	ulong HexCharToULong(char c):
+		IsDigit(c) ? c - '0'
+		: c >= 'a' && c <= 'f' ? c - 'a' + 10
+		: c - 'A' + 10;
+	ulong CharToULong(char c): c - '0';
+
 	if (lexer->Position >= lengthof(*lexer->Input)) {
 		*dest = new LexToken(EOF, lexer->Position);
 		return;
 	}
 	SkipSpaces(lexer);
 
-	char current = (*input)[lexer->Position];
+	char current = GetCurrent();
 	ulong pos = lexer->Position;
 	switch (current) {
 	start:
@@ -187,11 +204,11 @@ public void LexFetch(LexMachine &lexer, LexToken &dest)
 		case '+':
 		case '&':
 		case '|':
-			if ((*input)[lexer->Position] == current) {
+			if (GetCurrent() == current) {
 				lexer->Position++;
 				*dest = new LexToken(current << 8 | current, pos);
 				return;
-			} else if ((*input)[lexer->Position] == '=') {
+			} else if (GetCurrent() == '=') {
 				lexer->Position++;
 				*dest = new LexToken(current << 8 | '=', pos);
 				return;
@@ -200,21 +217,21 @@ public void LexFetch(LexMachine &lexer, LexToken &dest)
 		case '*':
 		case '/':
 		case '!':
-			if ((*input)[lexer->Position] == '=') {
+			if (GetCurrent() == '=') {
 				lexer->Position++;
 				*dest = new LexToken(current << 8 | '=', pos);
 				return;
 			}
 		case ':':
-			if ((*input)[lexer->Position] == current) {
+			if (GetCurrent() == current) {
 				lexer->Position++;
 				*dest = new LexToken(current << 8 | current, pos);
 				return;
 			}
 		case '.':
-			if ((*input)[lexer->Position] == current) {
+			if (GetCurrent() == current) {
 				lexer->Position++;
-				if ((*input)[lexer->Position] == current) {
+				if (GetCurrent() == current) {
 					lexer->Position++;
 					*dest = new LexToken(current << 16 | current << 8 | current, pos);
 					return;
@@ -224,27 +241,27 @@ public void LexFetch(LexMachine &lexer, LexToken &dest)
 			}
 		case '-':
 		case '=':
-			if ((*input)[lexer->Position] == '=') {
+			if (GetCurrent() == '=') {
 				lexer->Position++;
 				*dest = new LexToken(current << 8 | '=', pos);
 				return;
-			} else if ((*input)[lexer->Position] == '>') {
+			} else if (GetCurrent() == '>') {
 				lexer->Position++;
 				*dest = new LexToken(current << 8 | '>', pos);
 				return;
 			}
 		case '<':
 		case '>':
-			if ((*input)[lexer->Position] == current) {
+			if (GetCurrent() == current) {
 				lexer->Position++;
-				if ((*input)[lexer->Position] == '=') {
+				if (GetCurrent() == '=') {
 					lexer->Position++;
 					*dest = new LexToken(current << 16 | current << 8 | current, pos);
 					return;
 				}
 				*dest = new LexToken(current << 8 | current, pos);
 				return;
-			} else if ((*input)[lexer->Position] == '=') {
+			} else if (GetCurrent() == '=') {
 				lexer->Position++;
 				*dest = new LexToken(current << 8 | '=', pos);
 				return;
@@ -253,10 +270,10 @@ public void LexFetch(LexMachine &lexer, LexToken &dest)
 		case 'A'..'Z': {
 			const size base = lexer->Position - 1;
 			while (lexer->Position < lengthof(*lexer->Input) &&(
-				(*input)[lexer->Position] >= 'a' && (*input)[lexer->Position] <= 'z'
-				|| (*input)[lexer->Position] >= 'A' && (*input)[lexer->Position] <= 'Z'
-				|| (*input)[lexer->Position] >= '0' && (*input)[lexer->Position] <= '9'
-				|| (*input)[lexer->Position] == '_')) {
+				GetCurrent() >= 'a' && GetCurrent() <= 'z'
+				|| GetCurrent() >= 'A' && GetCurrent() <= 'Z'
+				|| GetCurrent() >= '0' && GetCurrent() <= '9'
+				|| GetCurrent() == '_')) {
 				
 				lexer->Position++;
 			}
@@ -266,18 +283,77 @@ public void LexFetch(LexMachine &lexer, LexToken &dest)
 			LexKeywords keyword = GetKeyword();
 			if (keyword == LexKeywords.NotAKeyword) {
 				*dest = new LexToken(keyword, pos);
+				return;
 			} else {
 				*dest = new LexToken(keyword, pos);
 				return;
 			}
 		}
 		case '0'..'9': {
-			const size base = lexer->Position - 1;
-			lexer->Position++;
-			if ((*input)[lexer->Position] == 'x'
-			 || (*input)[lexer->Position] == 'X') {
-				
+			if (GetCurrent() == '0') {
+				lexer->Position++;
+				if (GetCurrent() == 'x'
+				 || GetCurrent() == 'X') {
+					lexer->Position++;
+					ulong result = 0;
+					while (IsHexNumber(GetCurrent())) {
+						result = result * 16 + HexCharToULong(GetCurrent());
+						lexer->Position++;
+					}
+					*dest = new LexToken('0', pos, result => LexValue);
+					return;
+				} else if (GetCurrent() == 'b'
+				        || GetCurrent() == 'B') {
+					lexer->Position++;
+					ulong result = 0;
+					while (GetCurrent() == '0' || GetCurrent() == '1') {
+						result = result * 2 + GetCurrent() - '0';
+						lexer->Position++;
+					}
+					*dest = new LexToken('0', pos, result => LexValue);
+					return;
+				}
+				ulong result = 0;
+				while (IsOctNumber(GetCurrent())) {
+					result = result * 8 + GetCurrent() - '0';
+					lexer->Position++;
+				}
+				*dest = new LexToken('0', pos, result => LexValue);
+				return;
 			}
+			ulong result = 0;
+			while (IsDigit(GetCurrent())) {
+				result = result * 10 + GetCurrent() - '0';
+				lexer->Position++;
+			}
+			if (GetCurrent() == '.') {
+				double dResult = result => double;
+				double scaler = 1;
+				while (IsDigit(GetCurrent())) {
+					scaler /= 10;
+					dResult = dResult + (double)(GetCurrent() - '0') * scaler;
+					lexer->Position++;
+				}
+				if (GetCurrent() == 'e' || GetCurrent() == 'E') {
+					sbyte exponent = 0;
+					sbyte scale = 1;
+					lexer->Position++;
+					if (GetCurrent() == '-') {
+						scale *= - 1;
+						lexer->Position++;
+					}
+					while (IsDigit(GetCurrent())) {
+						exponent += (GetCurrent() - '0') * scale;
+						scale *= 10;
+						lexer->Position++;
+					}
+					dResult *= (double)exponent * (double)10;
+				}
+				*dest = new LexToken('0' << 8 | '.', dResult => LexValue);
+				return;
+			}
+			*dest = new LexToken('0', result => LexValue);
+			return;
 		}
 
 	end:

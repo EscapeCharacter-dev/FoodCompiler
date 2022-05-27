@@ -17,20 +17,6 @@ public static class Program
     {
         var input = File.ReadAllText("../cc/Lex.fd");
         var stopwatch = new Stopwatch();
-        /*while (true)
-        {
-            Console.Write("> ");
-            var input = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(input)) break;
-            var driver = new CompilationDriver("Sample");
-            var unit = new CompilationUnit(driver, input, "SampleGen_x86-64");
-            var generator = new LLVMGenerator(unit);
-            var decl = unit.Parser.ParseDeclaration();
-            unit.DisplayDiagnostics();
-            generator.GenerateFunction((IFunctionDeclaration)decl!);
-            generator.Dump();
-            Console.WriteLine();
-        }*/
         for (var i = 0; i < 2; i++)
         {
             var driver = new CompilationDriver("lex");
@@ -38,7 +24,7 @@ public static class Program
             stopwatch.Restart();
             driver.Parse();
             stopwatch.Stop();
-            driver.DisplayDiagnostics();
+            if (i != 0) driver.DisplayDiagnostics();
             Console.WriteLine(stopwatch.Elapsed.TotalMilliseconds + " ms");
         }
     }

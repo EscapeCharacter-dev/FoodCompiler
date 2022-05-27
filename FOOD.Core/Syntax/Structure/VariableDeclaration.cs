@@ -18,7 +18,34 @@ public struct VariableDeclaration : IDeclaration
         Location = location;
         IsPublic = isPublic;
         Attributes = attributes;
-        ValueRef = default(LLVMValueRef);
+        ValueRef = default;
+    }
+
+    public string Name { get; }
+
+    public ParseType Type { get; }
+
+    public Location Location { get; }
+
+    public bool IsPublic { get; }
+
+    public string[] Attributes { get; }
+
+    public LLVMValueRef ValueRef { get; set; }
+}
+
+public struct ExternVariableDeclaration : IDeclaration
+{
+    public ExternVariableDeclaration(
+        string name, ParseType type, Location location,
+        bool isPublic, string[] attributes)
+    {
+        Name = name;
+        Type = type;
+        Location = location;
+        IsPublic = isPublic;
+        Attributes = attributes;
+        ValueRef = default;
     }
 
     public string Name { get; }
