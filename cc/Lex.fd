@@ -167,16 +167,15 @@ public void SkipSpaces(LexMachine &lexer)
 public void LexFetch(LexMachine &lexer, LexToken &dest)
 {
 	const string &input = lexer->Input;
-	char GetCurrent(): lexer->Position >= lengthof(*lexer->Input) ? '\0' : (*lexer->Input)[lexer->Position];
-	bool IsLetter(char c): c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
-	bool IsDigit(char c): c >= '0' && c <= '9';
-	bool IsHexNumber(char c): IsDigit(c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
-	bool IsOctNumber(char c): c >= '0' && c <= '7';
-	ulong HexCharToULong(char c):
+	[pure] char GetCurrent(): lexer->Position >= lengthof(*lexer->Input) ? '\0' : (*lexer->Input)[lexer->Position];
+	[pure] bool IsLetter(char c): c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
+	[pure] bool IsDigit(char c): c >= '0' && c <= '9';
+	[pure] bool IsHexNumber(char c): IsDigit(c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
+	[pure] bool IsOctNumber(char c): c >= '0' && c <= '7';
+	[pure] ulong HexCharToULong(char c):
 		IsDigit(c) ? c - '0'
 		: c >= 'a' && c <= 'f' ? c - 'a' + 10
 		: c - 'A' + 10;
-	ulong CharToULong(char c): c - '0';
 
 	if (lexer->Position >= lengthof(*lexer->Input)) {
 		*dest = new LexToken(EOF, lexer->Position);
