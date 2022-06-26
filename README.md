@@ -1,6 +1,6 @@
 # The Food Compiler
-*The official compiler for the Food programming language.*
-## What's Food? Isn't it something you eat?
-Food is a C-style programming language that supports many modern
-programming features while keeping it simple and understandable.
-It is also designed to be cross-platform.
+This personal repository and this version of the compiler is no longer maintained.
+Please refer yourself to the new organization, https://github.com/foodlang for
+more info about the compiler and the specification.
+
+-EscapeChar, June 26th 2022
